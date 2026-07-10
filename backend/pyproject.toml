@@ -1,0 +1,47 @@
+[project]
+name = "aiops-resource-assessment"
+version = "1.0.0"
+description = "Azure Architecture Review Board 체크리스트 기반 리소스 자동 진단 AI Agent"
+requires-python = ">=3.11"
+
+dependencies = [
+    # Azure SDKs
+    "azure-identity>=1.15.0",
+    "azure-mgmt-resourcegraph>=8.0.0",
+    "azure-mgmt-resource>=23.0.0",
+    "azure-mgmt-subscription>=3.2.0b1",
+    # OpenAI (Azure AI Foundry 연결용)
+    "openai>=1.12.0",
+    # PostgreSQL
+    "psycopg2-binary>=2.9.0",
+    # Data processing
+    "pyyaml>=6.0.1",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.2.0",
+]
+chat = [
+    # Agent Framework + AG-UI server
+    "agent-framework-core>=1.0.0rc2",
+    "agent-framework-ag-ui>=1.0.0b260225",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "aiohttp>=3.9.0",
+    # Entra ID SSO (Authorization Code + MSAL UAMI 페더레이션)
+    "msal>=1.28.0",
+]
+
+[project.scripts]
+aiops-assess = "main:main"
+aiops-chat = "main:main"
+
+[tool.uv]
+prerelease = "allow"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

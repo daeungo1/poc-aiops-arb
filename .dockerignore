@@ -1,0 +1,48 @@
+# Git / IDE
+.git
+.gitignore
+.cursor
+.idea
+.vscode
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.venv
+venv
+ENV
+*.egg-info
+.eggs
+dist
+build
+.mypy_cache
+.ruff_cache
+htmlcov
+.coverage
+
+# uv
+.uv
+
+# Frontend (소스는 BE 이미지에 포함돼도 무방; node_modules·dist 만 제외)
+frontend/node_modules
+frontend/dist
+
+# 로컬 데이터·산출물 (backend/ 하위 포함)
+**/results
+**/checklists
+**/terraform_output
+.terraform
+*.tfstate
+*.tfstate.*
+
+# 로컬 비밀
+.env
+.env.*
+!.env.template
+
+# 기타
+*.md
+**/terminals
+*.log
+*.tmp

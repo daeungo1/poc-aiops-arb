@@ -1,0 +1,31 @@
+# Azure Web App for Containers / ACR — 백엔드(AG-UI + FastAPI)
+# 빌드: 저장소 루트에서 (백엔드 코드는 backend/ 하위)
+#   docker build -f docker/Dockerfile.backend -t <acr>.azurecr.io/aiops-be:<tag> .
+
+FROM ghcr.io/astral-sh/uv:0.6.14 AS uv
+
+FROM python:3.12-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=uv /uv /usr/local/bin/uv
+
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --frozen --no-dev --extra chat
+
+COPY backend/ ./
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PORT=5100
+
+EXPOSE 5100
+
+# Azure App Service는 보통 PORT를 주입함 — 애플리케이션 설정의 PORT와 맞출 것
+CMD ["sh", "-c", "exec python main.py --port \"${PORT}\""]

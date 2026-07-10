@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment (secrets) — .env.template 은 추적 유지
+.env
+.env.local
+.env.*.local
+!.env.template
+
+# Local PKCS#12 / PEM (Entra SSO dev) — 레포 커밋 금지
+*.pfx
+*.p12
+
+# Terraform / generated output
+terraform_output
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+tfplan
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Claude
+.claude/*
+CLAUDE.md
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+docker-compose.yaml
+
+

@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Reset ───────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', Roboto, sans-serif;
+  background-color: #f3f4f6;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Markdown in chat messages ───────────────────────────── */
+.markdown-body .markdown-viewer {
+  line-height: 1.6;
+  word-break: break-word;
+}
+.markdown-body .markdown-viewer > :first-child {
+  margin-top: 0;
+}
+.markdown-body .markdown-viewer > :last-child {
+  margin-bottom: 0;
+}
+.markdown-body .markdown-viewer strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+.markdown-body .markdown-viewer em {
+  font-style: italic;
+}
+.markdown-body .markdown-viewer del {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+/* ── Status Badge Colors ────────────────────────────────── */
+.badge-pass {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+.badge-warn {
+  @apply bg-orange-100 text-orange-800 border-orange-200;
+}
+.badge-fail {
+  @apply bg-red-100 text-red-800 border-red-200;
+}
+
+/* 대시보드 최근 목록 조회용 인디터미넌트 프로그레스바 */
+@keyframes dashboard-indeterminate-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+.dashboard-indeterminate-track {
+  @apply relative h-1.5 w-full overflow-hidden rounded-full bg-gray-100;
+}
+.dashboard-indeterminate-thumb {
+  @apply absolute top-0 h-full w-[36%] rounded-full bg-azure-blue;
+  animation: dashboard-indeterminate-slide 1.15s ease-in-out infinite;
+}
+
+/* 대시보드 전체 조회/초기화 시 상단 로딩 바 */
+.dashboard-top-loading {
+  @apply h-[3px] overflow-hidden bg-slate-200/70;
+}
+.dashboard-top-loading__bar {
+  @apply h-full w-1/3 bg-azure-blue;
+  animation: dashboard-indeterminate-slide 1.1s ease-in-out infinite;
+}
