@@ -27,7 +27,7 @@ provider "azurerm" {
 provider "azurerm" {
   alias = "secrets_kv"
   features {}
-  subscription_id = var.secrets_key_vault_subscription_id
+  subscription_id = var.secrets_key_vault_subscription_id != "" ? var.secrets_key_vault_subscription_id : var.subscription_id
   tenant_id       = var.tenant_id
 }
 

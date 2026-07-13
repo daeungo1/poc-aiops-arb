@@ -8,7 +8,8 @@ variable "subscription_id" {
 
 variable "secrets_key_vault_subscription_id" {
   type        = string
-  description = "시크릿 Key Vault(arb-env-kv)·그 시크릿이 속한 구독 ID. 동일 구독이면 subscription_id와 같은 값을 입력"
+  default     = ""
+  description = "(미사용) 시크릿 Key Vault 구독 ID. KV 의존 제거로 미사용. 비우면 subscription_id 사용"
 }
 
 variable "resource_reader_uami_subscription_id" {
@@ -158,6 +159,35 @@ variable "postgres_server_name" {
   description = "PostgreSQL Flexible Server 이름 (전역 고유, 영숫자·하이픈, 3-63자)"
 }
 
+variable "postgres_admin_login" {
+  type        = string
+  description = "PostgreSQL 관리자 로그인 (KV 미사용 · 직접 전달)"
+}
+
+variable "postgres_admin_password" {
+  type        = string
+  sensitive   = true
+  description = "PostgreSQL 관리자 비밀번호 (KV 미사용 · 직접 전달)"
+}
+
+variable "postgres_db_name" {
+  type        = string
+  default     = "aiops"
+  description = "초기 데이터베이스 이름"
+}
+
+variable "postgres_db_port" {
+  type        = string
+  default     = "5432"
+  description = "백엔드 DB_PORT 앱 설정"
+}
+
+variable "azure_auth_state_secret" {
+  type        = string
+  sensitive   = true
+  description = "백엔드 AZURE_AUTH_STATE_SECRET (OAuth state HMAC)"
+}
+
 variable "backend_kv_secret_postgres_admin_login" {
   type        = string
   default     = "postgres-admin-login"
@@ -189,7 +219,8 @@ variable "backend_kv_secret_postgres_db_port" {
 
 variable "terraform_secrets_key_vault_name" {
   type        = string
-  description = "Postgres·백엔드 앱 환경변수용 Key Vault (예: arb-env-kv)."
+  default     = ""
+  description = "(미사용) KV 의존 제거로 미사용."
 }
 
 variable "terraform_secrets_key_vault_resource_group_name" {

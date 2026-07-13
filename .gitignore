@@ -37,6 +37,8 @@ terraform_output
 .terraform/
 .terraform.lock.hcl
 tfplan
+# 로컬 민감값 (postgres 비밀번호, state secret 등) — 커밋 금지
+*.auto.tfvars
 
 # Frontend
 frontend/node_modules/

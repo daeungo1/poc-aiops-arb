@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source                = "hashicorp/azurerm"
-      configuration_aliases = [azurerm.secrets_kv, azurerm.resource_reader_uami, azurerm.dns]
+      configuration_aliases = [azurerm.resource_reader_uami, azurerm.dns]
     }
     azapi = {
       source = "Azure/azapi"

@@ -5,10 +5,6 @@ locals {
   # RG 이름은 var를 그대로 사용(데이터소스 조회 없이). 각 모듈이 필요 시 자체 조회.
   vnet_resource_group_name = var.vnet_resource_group_name != "" ? var.vnet_resource_group_name : var.resource_group_name
 
-  # Postgres·백엔드 앱 시크릿용 단일 Key Vault(terraform_secrets_key_vault_*)
-  secrets_key_vault_name = var.terraform_secrets_key_vault_name
-  secrets_key_vault_rg   = trimspace(var.terraform_secrets_key_vault_resource_group_name) != "" ? var.terraform_secrets_key_vault_resource_group_name : var.resource_group_name
-
   private_dns_zone_names = {
     azurecr       = "privatelink.azurecr.io"
     azurewebsites = "privatelink.azurewebsites.net"
@@ -73,21 +69,14 @@ module "ai_foundry" {
 module "database" {
   source = "./modules/database"
 
-  providers = {
-    azurerm            = azurerm
-    azurerm.secrets_kv = azurerm.secrets_kv
-  }
-
   resource_group_name  = var.resource_group_name
   location             = var.location
   tags                 = var.tags
   postgres_server_name = var.postgres_server_name
 
-  secrets_key_vault_name                = local.secrets_key_vault_name
-  secrets_key_vault_resource_group_name = local.secrets_key_vault_rg
-  secret_name_admin_login               = var.backend_kv_secret_postgres_admin_login
-  secret_name_admin_password            = var.backend_kv_secret_postgres_admin_password
-  secret_name_db_name                   = var.backend_kv_secret_postgres_db_name
+  admin_login    = var.postgres_admin_login
+  admin_password = var.postgres_admin_password
+  db_name        = var.postgres_db_name
 }
 
 # ── App Service: Frontend·Backend Web App ──
@@ -96,7 +85,6 @@ module "app_service" {
 
   providers = {
     azurerm                      = azurerm
-    azurerm.secrets_kv           = azurerm.secrets_kv
     azurerm.resource_reader_uami = azurerm.resource_reader_uami
     azurerm.dns                  = azurerm.dns
   }
@@ -133,15 +121,11 @@ module "app_service" {
   acr_name = var.acr_name
   acr_id   = module.acr.acr_id
 
-  secrets_key_vault_name                = local.secrets_key_vault_name
-  secrets_key_vault_resource_group_name = local.secrets_key_vault_rg
-  key_vault_permission_model            = var.key_vault_permission_model
-
-  secret_name_azure_auth_state_secret = var.backend_kv_secret_azure_auth_state_secret
-  secret_name_postgres_admin_login    = var.backend_kv_secret_postgres_admin_login
-  secret_name_postgres_admin_password = var.backend_kv_secret_postgres_admin_password
-  secret_name_postgres_db_name        = var.backend_kv_secret_postgres_db_name
-  secret_name_postgres_db_port        = var.backend_kv_secret_postgres_db_port
+  db_user                 = var.postgres_admin_login
+  db_password             = var.postgres_admin_password
+  db_name                 = var.postgres_db_name
+  db_port                 = var.postgres_db_port
+  azure_auth_state_secret = var.azure_auth_state_secret
 
   # 시나리오 2: 관리 인증서 도메인 검증 레코드 자동 생성용 (dns 변수 비우면 미생성)
   dns_zone_name           = var.dns_zone_name
@@ -152,11 +136,6 @@ module "app_service" {
 # ── Private Endpoint 일괄 생성 ──
 module "private_endpoints" {
   source = "./modules/private_endpoints"
-
-  providers = {
-    azurerm            = azurerm
-    azurerm.secrets_kv = azurerm.secrets_kv
-  }
 
   resource_group_name  = var.resource_group_name
   location             = var.location
@@ -169,8 +148,6 @@ module "private_endpoints" {
   backend_web_app_id                    = module.app_service.backend_web_app_id
   frontend_app_name                     = var.frontend_app_name
   frontend_web_app_id                   = module.app_service.frontend_web_app_id
-  secrets_key_vault_name                = local.secrets_key_vault_name
-  secrets_key_vault_resource_group_name = local.secrets_key_vault_rg
   acr_name                              = var.acr_name
   acr_id                                = module.acr.acr_id
   ai_services_name                      = var.ai_services_name

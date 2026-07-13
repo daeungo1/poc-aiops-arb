@@ -43,15 +43,6 @@ variable "frontend_web_app_id" {
   type = string
 }
 
-variable "secrets_key_vault_name" {
-  type = string
-}
-
-variable "secrets_key_vault_resource_group_name" {
-  type        = string
-  description = "시크릿 KV 리소스 그룹 (secrets_kv provider로 자체 조회)"
-}
-
 variable "acr_name" {
   type = string
 }

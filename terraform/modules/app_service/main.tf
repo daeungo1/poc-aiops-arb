@@ -15,12 +15,6 @@ data "azurerm_user_assigned_identity" "resource_reader" {
   resource_group_name = var.resource_reader_uami_resource_group_name != "" ? var.resource_reader_uami_resource_group_name : var.resource_group_name
 }
 
-data "azurerm_key_vault" "secrets" {
-  provider            = azurerm.secrets_kv
-  name                = var.secrets_key_vault_name
-  resource_group_name = var.secrets_key_vault_resource_group_name
-}
-
 locals {
   has_resource_reader_uami = var.resource_reader_uami_name != ""
 
@@ -38,14 +32,13 @@ locals {
   backend_ai_resolved_definition_id = "${data.azurerm_subscription.workload.id}/providers/Microsoft.Authorization/roleDefinitions/${local.backend_ai_builtin_role_guids[var.backend_ai_builtin_role]}"
   backend_ai_role_definition_id     = var.backend_ai_role_definition_id != "" ? var.backend_ai_role_definition_id : local.backend_ai_resolved_definition_id
 
-  # 백엔드 Linux Web App 앱 설정용 Key Vault 참조(@Microsoft.KeyVault, URI 끝 / = 최신 시크릿 버전)
-  secrets_keyvault_base_uri_trimmed = trimsuffix(data.azurerm_key_vault.secrets.vault_uri, "/")
+  # 백엔드 Linux Web App DB·SSO 시크릿 앱 설정(직접 값 — KV 데이터플레인 정책 차단 회피)
   backend_app_keyvault_settings = {
-    AZURE_AUTH_STATE_SECRET = "@Microsoft.KeyVault(SecretUri=${local.secrets_keyvault_base_uri_trimmed}/secrets/${var.secret_name_azure_auth_state_secret}/)"
-    DB_USER                 = "@Microsoft.KeyVault(SecretUri=${local.secrets_keyvault_base_uri_trimmed}/secrets/${var.secret_name_postgres_admin_login}/)"
-    DB_PASSWORD             = "@Microsoft.KeyVault(SecretUri=${local.secrets_keyvault_base_uri_trimmed}/secrets/${var.secret_name_postgres_admin_password}/)"
-    DB_NAME                 = "@Microsoft.KeyVault(SecretUri=${local.secrets_keyvault_base_uri_trimmed}/secrets/${var.secret_name_postgres_db_name}/)"
-    DB_PORT                 = "@Microsoft.KeyVault(SecretUri=${local.secrets_keyvault_base_uri_trimmed}/secrets/${var.secret_name_postgres_db_port}/)"
+    AZURE_AUTH_STATE_SECRET = var.azure_auth_state_secret
+    DB_USER                 = var.db_user
+    DB_PASSWORD             = var.db_password
+    DB_NAME                 = var.db_name
+    DB_PORT                 = var.db_port
   }
 
   # 관리 인증서 모드 + DNS 변수 지정 시 도메인 검증 레코드(CNAME·asuid TXT)를 자동 생성
@@ -142,33 +135,9 @@ resource "azurerm_linux_web_app" "backend" {
 
       # Timezone
       TZ = var.tz
-
-      # Key Vault @Microsoft.KeyVault 참조는 SAMI 사용(UAMI+SAMI 동시 부여 시 기본값이 UAMI일 수 있음)
-      WEBSITE_KEYVAULT_REFERENCE_IDENTITY = "SystemAssigned"
     },
     local.backend_app_keyvault_settings
   )
-}
-
-# 백엔드 Web App SAMI → Key Vault 시크릿 읽기 (key_vault_reference_identity_id = SystemAssigned)
-resource "azurerm_role_assignment" "kv_rbac_backend_secrets_user" {
-  count = var.key_vault_permission_model == "rbac" ? 1 : 0
-
-  provider             = azurerm.secrets_kv
-  scope                = data.azurerm_key_vault.secrets.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_web_app.backend.identity[0].principal_id
-}
-
-resource "azurerm_key_vault_access_policy" "backend" {
-  count = var.key_vault_permission_model == "access_policy" ? 1 : 0
-
-  provider     = azurerm.secrets_kv
-  key_vault_id = data.azurerm_key_vault.secrets.id
-  tenant_id    = var.tenant_id
-  object_id    = azurerm_linux_web_app.backend.identity[0].principal_id
-
-  secret_permissions = ["Get"]
 }
 
 resource "azapi_resource" "backend_sitecontainer" {

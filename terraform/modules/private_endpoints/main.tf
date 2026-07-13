@@ -1,12 +1,5 @@
 # Private Endpoint 일괄 생성 (모두 pe 서브넷 + 대응 Private DNS zone group)
-# backend / frontend(appgw 모드) / secrets KV / acr / ai_account / postgres
-
-# 시크릿 KV는 다른 구독일 수 있어 secrets_kv provider로 id 조회
-data "azurerm_key_vault" "secrets" {
-  provider            = azurerm.secrets_kv
-  name                = var.secrets_key_vault_name
-  resource_group_name = var.secrets_key_vault_resource_group_name
-}
+# backend / frontend(appgw 모드) / acr / ai_account / postgres
 
 resource "azurerm_private_endpoint" "backend" {
   name                = "${var.backend_app_name}-pe"
@@ -47,27 +40,6 @@ resource "azurerm_private_endpoint" "frontend" {
   private_dns_zone_group {
     name                 = "default"
     private_dns_zone_ids = [var.private_dns_zone_ids["azurewebsites"]]
-  }
-}
-
-# 앱·Postgres 시크릿 Vault(arb-env-kv 등) — VNet에서 Key Vault 참조 해소
-resource "azurerm_private_endpoint" "secrets_keyvault" {
-  name                = "${var.secrets_key_vault_name}-pe"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  subnet_id           = var.pe_subnet_id
-  tags                = var.tags
-
-  private_service_connection {
-    name                           = "${var.secrets_key_vault_name}-pe-conn"
-    private_connection_resource_id = data.azurerm_key_vault.secrets.id
-    subresource_names              = ["vault"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "default"
-    private_dns_zone_ids = [var.private_dns_zone_ids["vaultcore"]]
   }
 }
 

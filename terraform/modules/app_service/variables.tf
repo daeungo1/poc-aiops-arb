@@ -123,39 +123,28 @@ variable "acr_id" {
   description = "AcrPull 역할 할당 scope"
 }
 
-# ── 시크릿 Key Vault (secrets_kv provider로 자체 조회) ──
-variable "secrets_key_vault_name" {
+# ── 백엔드 DB·SSO 시크릿 (직접 값 전달) ──
+variable "db_user" {
   type = string
 }
 
-variable "secrets_key_vault_resource_group_name" {
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "db_name" {
   type = string
 }
 
-variable "key_vault_permission_model" {
-  type        = string
-  description = "rbac | access_policy"
+variable "db_port" {
+  type    = string
+  default = "5432"
 }
 
-# 백엔드 app_settings @Microsoft.KeyVault 참조에 쓰는 시크릿 이름들
-variable "secret_name_azure_auth_state_secret" {
-  type = string
-}
-
-variable "secret_name_postgres_admin_login" {
-  type = string
-}
-
-variable "secret_name_postgres_admin_password" {
-  type = string
-}
-
-variable "secret_name_postgres_db_name" {
-  type = string
-}
-
-variable "secret_name_postgres_db_port" {
-  type = string
+variable "azure_auth_state_secret" {
+  type      = string
+  sensitive = true
 }
 
 # ── DNS (선택: appservice_managed_cert 모드에서 도메인 검증 레코드 자동 생성. azurerm.dns provider) ──

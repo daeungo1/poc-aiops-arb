@@ -15,16 +15,6 @@ output "backend_default_hostname" {
   value = module.app_service.backend_default_hostname
 }
 
-output "secrets_key_vault_name" {
-  description = "Postgres 자격증명·앱 시크릿용 Key Vault(기본적으로 key_vault_name과 동일할 수 있음)"
-  value       = local.secrets_key_vault_name
-}
-
-output "secrets_key_vault_rg" {
-  description = "시크릿용 Key Vault 리소스 그룹"
-  value       = local.secrets_key_vault_rg
-}
-
 output "acr_name" {
   value = module.acr.acr_name
 }

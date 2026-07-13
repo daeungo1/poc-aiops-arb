@@ -1,37 +1,13 @@
 # PostgreSQL Flexible Server (Private, public access 차단) + 초기 DB
-# 자격증명·DB명은 시크릿 KV에서 직접 조회(secrets_kv provider, 다른 구독일 수 있음).
-
-data "azurerm_key_vault" "secrets" {
-  provider            = azurerm.secrets_kv
-  name                = var.secrets_key_vault_name
-  resource_group_name = var.secrets_key_vault_resource_group_name
-}
-
-data "azurerm_key_vault_secret" "admin_login" {
-  provider     = azurerm.secrets_kv
-  name         = var.secret_name_admin_login
-  key_vault_id = data.azurerm_key_vault.secrets.id
-}
-
-data "azurerm_key_vault_secret" "admin_password" {
-  provider     = azurerm.secrets_kv
-  name         = var.secret_name_admin_password
-  key_vault_id = data.azurerm_key_vault.secrets.id
-}
-
-data "azurerm_key_vault_secret" "db_name" {
-  provider     = azurerm.secrets_kv
-  name         = var.secret_name_db_name
-  key_vault_id = data.azurerm_key_vault.secrets.id
-}
+# 자격증명·DB명은 직접 변수로 전달(로컬 apply 시 KV 데이터플레인 정책 차단 회피).
 
 resource "azurerm_postgresql_flexible_server" "main" {
   name                          = var.postgres_server_name
   resource_group_name           = var.resource_group_name
   location                      = var.location
   version                       = "16"
-  administrator_login           = data.azurerm_key_vault_secret.admin_login.value
-  administrator_password        = data.azurerm_key_vault_secret.admin_password.value
+  administrator_login           = var.admin_login
+  administrator_password        = var.admin_password
   public_network_access_enabled = false
   zone                          = "1"
   storage_mb                    = 32768
@@ -40,7 +16,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 }
 
 resource "azurerm_postgresql_flexible_server_database" "main" {
-  name      = data.azurerm_key_vault_secret.db_name.value
+  name      = var.db_name
   server_id = azurerm_postgresql_flexible_server.main.id
   charset   = "UTF8"
   collation = "en_US.utf8"
