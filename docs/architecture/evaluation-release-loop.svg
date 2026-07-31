@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Foundry Evaluation 기반 릴리스 및 운영 피드백 폐루프</title>
+  <desc id="desc">Release manifest, 평가 데이터셋, 다층 evaluator, promotion gate, shadow canary production, telemetry, failure triage와 regression dataset 피드백 흐름</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#172b4d" flood-opacity="0.14"/>
+    </filter>
+    <marker id="blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#2563eb"/></marker>
+    <marker id="green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#15803d"/></marker>
+    <marker id="red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 Z" fill="#dc2626"/></marker>
+    <style>
+      text { font-family: Inter, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif; fill: #172b4d; }
+      .title { font-size: 36px; font-weight: 800; }
+      .subtitle { font-size: 18px; fill: #52616f; }
+      .boundary { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 9 7; rx: 20; }
+      .boundary-title { font-size: 18px; font-weight: 800; fill: #475569; }
+      .card { fill: white; stroke-width: 2.3; rx: 15; filter: url(#shadow); }
+      .name { font-size: 21px; font-weight: 800; }
+      .body { font-size: 16px; fill: #425466; }
+      .small { font-size: 14px; fill: #52616f; }
+      .pill { font-size: 14px; font-weight: 800; }
+      .text-white { fill: #ffffff; }
+      .text-green { fill: #166534; }
+      .flow { fill: none; stroke: #2563eb; stroke-width: 4; marker-end: url(#blue); }
+      .feedback { fill: none; stroke: #15803d; stroke-width: 3.5; stroke-dasharray: 4 7; marker-end: url(#green); }
+      .block { fill: none; stroke: #dc2626; stroke-width: 3.5; stroke-dasharray: 9 6; marker-end: url(#red); }
+    </style>
+  </defs>
+  <rect width="1800" height="1120" fill="#fff"/>
+  <text x="65" y="60" class="title">Agent의 goal은 “좋은 답변”이 아니라 검증된 release가 되는 것이다</text>
+  <text x="65" y="94" class="subtitle">Foundry Evaluation은 평가 실행 플랫폼이고, 상태 oracle·pass^k·승격·rollback은 우리 시스템이 구현한다.</text>
+
+  <rect x="50" y="130" width="1700" height="685" class="boundary"/>
+  <text x="72" y="163" class="boundary-title">M8 Evaluation / Release Gate — candidate마다 모든 버전과 증거를 봉인</text>
+
+  <!-- Manifest -->
+  <rect x="85" y="205" width="315" height="300" class="card" stroke="#7c3aed"/>
+  <rect x="105" y="225" width="150" height="32" rx="16" fill="#7c3aed"/>
+  <text x="180" y="247" text-anchor="middle" class="pill text-white">ReleaseManifest</text>
+  <text x="105" y="292" class="body">
+    <tspan x="105" dy="0">agent/image digest</tspan>
+    <tspan x="105" dy="28">prompt version + hash</tspan>
+    <tspan x="105" dy="28">tool policy/schema version</tspan>
+    <tspan x="105" dy="28">policy bundle + checklist release</tspan>
+    <tspan x="105" dy="28">dataset/evaluator versions</tspan>
+    <tspan x="105" dy="28">source commit + parent release</tspan>
+    <tspan x="105" dy="28">Foundry agent version</tspan>
+  </text>
+  <rect x="105" y="467" width="270" height="24" rx="8" fill="#f3e8ff"/>
+  <text x="240" y="484" text-anchor="middle" class="small">하나라도 변경되면 새 candidate</text>
+
+  <!-- Datasets -->
+  <rect x="455" y="205" width="315" height="300" class="card" stroke="#0891b2"/>
+  <text x="480" y="245" class="name">평가 데이터셋</text>
+  <rect x="480" y="272" width="265" height="42" rx="10" fill="#dbeafe"/>
+  <text x="495" y="299" class="body">Golden — 검토된 정답/기권</text>
+  <rect x="480" y="326" width="265" height="42" rx="10" fill="#fee2e2"/>
+  <text x="495" y="353" class="body">Adversarial — 공격/오용</text>
+  <rect x="480" y="380" width="265" height="42" rx="10" fill="#fef3c7"/>
+  <text x="495" y="407" class="body">Regression — 확인된 결함</text>
+  <rect x="480" y="434" width="265" height="42" rx="10" fill="#dcfce7"/>
+  <text x="495" y="461" class="body">Production-curated — 검토 trace</text>
+
+  <!-- Evaluators -->
+  <rect x="825" y="205" width="430" height="300" class="card" stroke="#dc2626"/>
+  <text x="850" y="245" class="name">다층 Evaluator stack</text>
+  <text x="850" y="282" class="body">
+    <tspan x="850" dy="0">1. State oracle: expected final state / prohibited action</tspan>
+    <tspan x="850" dy="29">2. Policy oracle: ARG · Azure Policy · OPA · Prowler</tspan>
+    <tspan x="850" dy="29">3. Tool oracle: selection · input · output · allowlist</tspan>
+    <tspan x="850" dy="29">4. Safety: injection · leakage · approval bypass</tspan>
+    <tspan x="850" dy="29">5. Quality: groundedness · relevance · citation</tspan>
+    <tspan x="850" dy="29">6. Reliability: repeated trial + case floor + pass^k</tspan>
+    <tspan x="850" dy="29">7. Human: critical semantic / human-only / exception</tspan>
+  </text>
+
+  <!-- Gate -->
+  <rect x="1310" y="205" width="395" height="300" class="card" stroke="#15803d"/>
+  <text x="1335" y="245" class="name">Blocking gate</text>
+  <text x="1335" y="282" class="body">
+    <tspan x="1335" dy="0">Critical deterministic/regression: 100%</tspan>
+    <tspan x="1335" dy="29">Tool schema/allowlist/write denial: 100%</tspan>
+    <tspan x="1335" dy="29">Critical stateful case: 5/5 + Pass³=1</tspan>
+    <tspan x="1335" dy="29">Security confirmed failure: 0</tspan>
+    <tspan x="1335" dy="29">Evidence freshness/citation: blocking</tspan>
+    <tspan x="1335" dy="29">Human-only: reviewed/valid exception only</tspan>
+  </text>
+  <rect x="1335" y="455" width="345" height="32" rx="9" fill="#dcfce7"/>
+  <text x="1508" y="477" text-anchor="middle" class="pill text-green">모든 gate proof를 EvalRun에 저장</text>
+
+  <path d="M400 355 H455" class="flow"/>
+  <path d="M770 355 H825" class="flow"/>
+  <path d="M1255 355 H1310" class="flow"/>
+
+  <!-- Promotion -->
+  <text x="85" y="575" class="name">Promotion state machine</text>
+  <g>
+    <rect x="85" y="605" width="185" height="72" class="card" stroke="#64748b"/>
+    <text x="178" y="638" text-anchor="middle" class="name">Candidate</text>
+    <text x="178" y="660" text-anchor="middle" class="small">manifest sealed</text>
+    <rect x="320" y="605" width="185" height="72" class="card" stroke="#2563eb"/>
+    <text x="413" y="638" text-anchor="middle" class="name">Evaluated</text>
+    <text x="413" y="660" text-anchor="middle" class="small">all suites complete</text>
+    <rect x="555" y="605" width="185" height="72" class="card" stroke="#7c3aed"/>
+    <text x="648" y="638" text-anchor="middle" class="name">Gate passed</text>
+    <text x="648" y="660" text-anchor="middle" class="small">proof + approval</text>
+    <rect x="790" y="605" width="185" height="72" class="card" stroke="#0891b2"/>
+    <text x="883" y="638" text-anchor="middle" class="name">Shadow</text>
+    <text x="883" y="660" text-anchor="middle" class="small">write tools disabled</text>
+    <rect x="1025" y="605" width="185" height="72" class="card" stroke="#f59e0b"/>
+    <text x="1118" y="638" text-anchor="middle" class="name">Canary</text>
+    <text x="1118" y="660" text-anchor="middle" class="small">gateway cohort</text>
+    <rect x="1260" y="605" width="185" height="72" class="card" stroke="#16a34a"/>
+    <text x="1353" y="638" text-anchor="middle" class="name">Production</text>
+    <text x="1353" y="660" text-anchor="middle" class="small">active route</text>
+    <rect x="1495" y="605" width="185" height="72" class="card" stroke="#dc2626"/>
+    <text x="1588" y="638" text-anchor="middle" class="name">Rollback</text>
+    <text x="1588" y="660" text-anchor="middle" class="small">prior known-good</text>
+    <path d="M270 641 H320 M505 641 H555 M740 641 H790 M975 641 H1025 M1210 641 H1260" class="flow"/>
+    <path d="M1445 641 H1495" class="block"/>
+  </g>
+
+  <rect x="85" y="720" width="1595" height="58" rx="13" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="108" y="756" class="body">Hosted Agent endpoint는 version traffic split을 제공하지 않으므로 M1 Gateway가 active/candidate endpoint의 canary와 rollback을 소유한다.</text>
+
+  <!-- Feedback loop -->
+  <rect x="50" y="855" width="1700" height="210" class="boundary" fill="#f0fdf4"/>
+  <text x="72" y="888" class="boundary-title">운영 trace → 결함 분류 → version 수정 → 전체 재평가</text>
+
+  <rect x="85" y="915" width="270" height="105" class="card" stroke="#0ea5e9"/>
+  <text x="110" y="950" class="name">OTel / App Insights</text>
+  <text x="110" y="980" class="body">trace · tool · latency · cost</text>
+  <text x="110" y="1005" class="small">release_id + 모든 version tag</text>
+
+  <rect x="405" y="915" width="270" height="105" class="card" stroke="#15803d"/>
+  <text x="430" y="950" class="name">Sample / Triage</text>
+  <text x="430" y="980" class="body">redact · label · root cause</text>
+  <text x="430" y="1005" class="small">agent/tool/policy/checklist/eval</text>
+
+  <rect x="725" y="915" width="300" height="105" class="card" stroke="#f59e0b"/>
+  <text x="750" y="950" class="name">Regression case</text>
+  <text x="750" y="980" class="body">minimal repro + expected state</text>
+  <text x="750" y="1005" class="small">blocking member until retired</text>
+
+  <rect x="1075" y="915" width="290" height="105" class="card" stroke="#7c3aed"/>
+  <text x="1100" y="950" class="name">Version bump</text>
+  <text x="1100" y="980" class="body">prompt/tool/policy/checklist</text>
+  <text x="1100" y="1005" class="small">dataset/evaluator 포함</text>
+
+  <rect x="1415" y="915" width="290" height="105" class="card" stroke="#2563eb"/>
+  <text x="1440" y="950" class="name">New candidate</text>
+  <text x="1440" y="980" class="body">기존 proof 재사용 금지</text>
+  <text x="1440" y="1005" class="small">모든 gate를 처음부터 실행</text>
+
+  <path d="M355 968 H405 M675 968 H725 M1025 968 H1075 M1365 968 H1415" class="feedback"/>
+  <path d="M1560 915 C1560 825 220 845 220 505" class="feedback"/>
+
+  <rect x="65" y="1080" width="1670" height="25" rx="8" fill="#f8fafc"/>
+  <text x="900" y="1098" text-anchor="middle" class="small">Foundry 제공: evaluation 실행·dataset·built-in/custom evaluator·trace | 우리 구현: ground truth·pass^k·상태 oracle·승격·human approval·gateway routing</text>
+</svg>
