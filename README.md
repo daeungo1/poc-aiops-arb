@@ -29,6 +29,10 @@ Azure Architecture Review Board 체크리스트를 기준으로 Azure 리소스�
 | 저장소 | PostgreSQL(체크리스트·평가 결과·Terraform 산출물) + 로컬 파일 출력 |
 | 프론트엔드 | React 18, Vite 5, TypeScript, Tailwind CSS, 경량 AG-UI 스트림 클라이언트 |
 
+## 설계·기능 원점 문서
+
+- [AIOps Resource Assessment — 설계·기능 원점 정리](docs/aiops-resource-assessment-origin.md)
+
 ## Architecture Review Board 체크리스트 영역
 
 | 체크리스트 | 설명 | 점검 항목(대략) |
