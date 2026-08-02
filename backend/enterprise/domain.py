@@ -27,6 +27,38 @@ class EvaluatorKind(str, Enum):
     MANUAL = "manual"
 
 
+class EvidenceStatus(str, Enum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+
+
+class SourceRole(str, Enum):
+    PRIMARY = "primary"
+    CORROBORATING = "corroborating"
+
+
+CANONICAL_STATE_RULES = MappingProxyType(
+    {
+        "assertion_matched": "pass",
+        "assertion_not_matched": "fail",
+        "evidence_missing": "unknown",
+        "evidence_partial": "unknown",
+        "evidence_resource_type_missing": "unknown",
+        "evidence_scope_conflict": "unknown",
+        "evidence_scope_incomplete": "unknown",
+        "evidence_selector_missing": "unknown",
+        "evidence_value_unknown": "unknown",
+        "evidence_conflict": "unknown",
+        "corroborating_signal_invalid": "unknown",
+        "assertion_operator_unsupported": "unknown",
+        "assertion_value_invalid": "unknown",
+        "resource_type_unsupported": "not_applicable",
+        "valid_exemption": "exempted",
+        "manual_evidence_required": "manual_pending",
+    }
+)
+
+
 def _require_text(name: str, value: str) -> None:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{name} must not be empty")
@@ -72,10 +104,36 @@ def _is_sha256_hash(value: Any) -> bool:
 
 
 @dataclass(frozen=True)
+class EvidenceSource:
+    source_kind: str
+    reference: str
+    version: str
+    role: SourceRole
+    required: bool
+    verdict_selector: str | None = None
+
+    def __post_init__(self) -> None:
+        _require_text("source_kind", self.source_kind)
+        _require_text("reference", self.reference)
+        _require_text("version", self.version)
+        if not isinstance(self.role, SourceRole):
+            raise ValueError("role must be a SourceRole")
+        if not isinstance(self.required, bool):
+            raise ValueError("required must be a bool")
+        if self.role is SourceRole.CORROBORATING:
+            if self.verdict_selector != "verdict.status":
+                raise ValueError("verdict_selector must be 'verdict.status' for corroborating sources")
+        elif self.verdict_selector is not None:
+            raise ValueError("verdict_selector is only valid for corroborating sources")
+
+
+@dataclass(frozen=True)
 class EvidenceRecord:
     source_kind: str
     source_reference: str
     source_version: str
+    resource_id: str
+    status: EvidenceStatus
     observed_at: datetime
     payload: Mapping[str, Any]
     content_hash: str
@@ -84,6 +142,9 @@ class EvidenceRecord:
         _require_text("source_kind", self.source_kind)
         _require_text("source_reference", self.source_reference)
         _require_text("source_version", self.source_version)
+        _require_text("resource_id", self.resource_id)
+        if not isinstance(self.status, EvidenceStatus):
+            raise ValueError("status must be an EvidenceStatus")
         if (
             not isinstance(self.observed_at, datetime)
             or self.observed_at.tzinfo is None
@@ -104,12 +165,16 @@ class EvidenceRecord:
         source_version: str,
         payload: Mapping[str, Any],
         *,
+        resource_id: str,
+        status: EvidenceStatus,
         observed_at: datetime | None = None,
     ) -> EvidenceRecord:
         return cls(
             source_kind=source_kind,
             source_reference=source_reference,
             source_version=source_version,
+            resource_id=resource_id,
+            status=status,
             observed_at=observed_at if observed_at is not None else datetime.now(UTC),
             payload=payload,
             content_hash=_payload_hash(payload),
@@ -122,10 +187,7 @@ class ControlDefinition:
     version: str
     resource_type: str
     evaluator_kind: EvaluatorKind
-    source_kind: str
-    source_reference: str
-    source_version: str
-    selector: str
+    sources: tuple[EvidenceSource, ...]
     assertion: Mapping[str, Any]
     scope_conditions: Mapping[str, Any]
     state_rules: Mapping[str, Any]
@@ -136,12 +198,20 @@ class ControlDefinition:
         _require_text("key", self.key)
         _require_text("version", self.version)
         _require_text("resource_type", self.resource_type)
-        _require_text("source_kind", self.source_kind)
-        _require_text("source_reference", self.source_reference)
-        _require_text("source_version", self.source_version)
-        _require_text("selector", self.selector)
         if not isinstance(self.evaluator_kind, EvaluatorKind):
             raise ValueError("evaluator_kind must be an EvaluatorKind")
+        if isinstance(self.sources, (str, bytes)):
+            raise ValueError("sources must be a non-empty collection of EvidenceSource values")
+        try:
+            sources = tuple(self.sources)
+        except TypeError as exc:
+            raise ValueError("sources must be a non-empty collection of EvidenceSource values") from exc
+        if not sources or any(not isinstance(source, EvidenceSource) for source in sources):
+            raise ValueError("sources must be a non-empty collection of EvidenceSource values")
+        primary_sources = tuple(source for source in sources if source.role is SourceRole.PRIMARY)
+        if len(primary_sources) != 1 or not primary_sources[0].required:
+            raise ValueError("sources must contain exactly one required primary source")
+        object.__setattr__(self, "sources", sources)
         if not isinstance(self.assertion, Mapping) or not self.assertion:
             raise ValueError("assertion must not be empty")
         for field_name in ("assertion", "scope_conditions", "state_rules", "remediation", "verification"):
@@ -151,6 +221,24 @@ class ControlDefinition:
             if field_name in {"state_rules", "remediation", "verification"} and not value:
                 raise ValueError(f"{field_name} must not be empty")
             object.__setattr__(self, field_name, _freeze(value))
+        if dict(self.state_rules) != dict(CANONICAL_STATE_RULES):
+            raise ValueError("state_rules must exactly match the canonical evaluator rules")
+
+    @property
+    def primary_source(self) -> EvidenceSource:
+        return next(source for source in self.sources if source.role is SourceRole.PRIMARY)
+
+    @property
+    def source_kind(self) -> str:
+        return self.primary_source.source_kind
+
+    @property
+    def source_reference(self) -> str:
+        return self.primary_source.reference
+
+    @property
+    def source_version(self) -> str:
+        return self.primary_source.version
 
 
 @dataclass(frozen=True)

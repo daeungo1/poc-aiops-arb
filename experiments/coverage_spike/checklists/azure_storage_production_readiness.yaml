@@ -1,0 +1,62 @@
+metadata:
+  name: Azure Storage Production Readiness
+  version: "1.0.0"
+  description: Azure Storage Account의 프로덕션 준비 상태를 검증하는 합성 coverage spike 체크리스트
+  applicable_resource_types:
+    - Microsoft.Storage/storageAccounts
+
+categories:
+  - id: security
+    name: Security
+    items:
+      - id: transport
+        name: Transport security
+        checks:
+          - question: Secure transfer가 필수로 설정되어 있는가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.secure_transfer
+              guidance: HTTPS 전용 트래픽을 사용한다.
+          - question: Minimum TLS version이 1.2 이상인가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.minimum_tls
+              guidance: Minimum TLS version을 TLS 1.2로 설정한다.
+      - id: network
+        name: Network isolation
+        checks:
+          - question: Public network access가 제한되어 있는가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.public_network
+              guidance: Public network access를 비활성화한다.
+          - question: Private endpoint가 구성되어 있는가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.private_endpoint
+              guidance: Storage Account용 private endpoint를 구성한다.
+  - id: resilience
+    name: Resilience
+    items:
+      - id: recovery
+        name: Recovery
+        checks:
+          - question: Blob soft delete 보존 기간이 7일 이상인가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.blob_soft_delete
+              guidance: Blob soft delete를 활성화하고 7일 이상 보존한다.
+      - id: redundancy
+        name: Redundancy
+        checks:
+          - question: Zone 또는 geo-redundant SKU를 사용하는가?
+            azure_check:
+              type: automated
+              resource_type: Microsoft.Storage/storageAccounts
+              control_key: storage.redundancy
+              guidance: 요구 가용성에 맞는 ZRS 또는 GRS 계열 SKU를 사용한다.

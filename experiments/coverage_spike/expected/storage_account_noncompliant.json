@@ -1,0 +1,11 @@
+{
+  "fixture_id": "synthetic-storage-account-noncompliant",
+  "verdicts": {
+    "storage.secure_transfer": {"state": "fail", "reason_code": "assertion_not_matched"},
+    "storage.minimum_tls": {"state": "fail", "reason_code": "assertion_not_matched"},
+    "storage.public_network": {"state": "fail", "reason_code": "assertion_not_matched"},
+    "storage.blob_soft_delete": {"state": "fail", "reason_code": "assertion_not_matched"},
+    "storage.redundancy": {"state": "fail", "reason_code": "assertion_not_matched"},
+    "storage.private_endpoint": {"state": "fail", "reason_code": "assertion_not_matched"}
+  }
+}

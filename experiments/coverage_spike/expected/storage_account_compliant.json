@@ -1,0 +1,11 @@
+{
+  "fixture_id": "synthetic-storage-account-compliant",
+  "verdicts": {
+    "storage.secure_transfer": {"state": "pass", "reason_code": "assertion_matched"},
+    "storage.minimum_tls": {"state": "pass", "reason_code": "assertion_matched"},
+    "storage.public_network": {"state": "pass", "reason_code": "assertion_matched"},
+    "storage.blob_soft_delete": {"state": "pass", "reason_code": "assertion_matched"},
+    "storage.redundancy": {"state": "pass", "reason_code": "assertion_matched"},
+    "storage.private_endpoint": {"state": "pass", "reason_code": "assertion_matched"}
+  }
+}

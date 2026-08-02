@@ -1,0 +1,277 @@
+mapping_version: "1.0.0"
+checklist_name: Azure Storage Production Readiness
+controls:
+  - key: storage.secure_transfer
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: managed
+    sources:
+      - source_kind: arm
+        reference: arm.storage_account.resource
+        version: "2023-05-01"
+        role: primary
+        required: true
+      - source_kind: azure_policy
+        reference: synthetic.azure_policy.storage.secure_transfer
+        version: synthetic-v1
+        role: corroborating
+        required: false
+        verdict_selector: verdict.status
+    assertion:
+      selector: properties.supportsHttpsTrafficOnly
+      operator: equals
+      expected: true
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - properties.supportsHttpsTrafficOnly
+        corroborating:
+          - resource_type
+          - verdict.status
+    state_rules: &state_rules
+      assertion_matched: pass
+      assertion_not_matched: fail
+      evidence_missing: unknown
+      evidence_partial: unknown
+      evidence_resource_type_missing: unknown
+      evidence_scope_conflict: unknown
+      evidence_scope_incomplete: unknown
+      evidence_selector_missing: unknown
+      evidence_value_unknown: unknown
+      evidence_conflict: unknown
+      corroborating_signal_invalid: unknown
+      assertion_operator_unsupported: unknown
+      assertion_value_invalid: unknown
+      resource_type_unsupported: not_applicable
+      valid_exemption: exempted
+      manual_evidence_required: manual_pending
+    remediation:
+      description: Secure transfer required를 활성화한다.
+      property: properties.supportsHttpsTrafficOnly
+      desired_value: true
+    verification:
+      source_kind: arm
+      assertion:
+        selector: properties.supportsHttpsTrafficOnly
+        operator: equals
+        expected: true
+
+  - key: storage.minimum_tls
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: custom
+    sources:
+      - source_kind: arm
+        reference: arm.storage_account.resource
+        version: "2023-05-01"
+        role: primary
+        required: true
+    assertion:
+      selector: properties.minimumTlsVersion
+      operator: in
+      expected:
+        - TLS1_2
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - properties.minimumTlsVersion
+    state_rules: *state_rules
+    remediation:
+      description: Minimum TLS version을 TLS1_2로 설정한다.
+      property: properties.minimumTlsVersion
+      desired_value: TLS1_2
+    verification:
+      source_kind: arm
+      assertion:
+        selector: properties.minimumTlsVersion
+        operator: equals
+        expected: TLS1_2
+
+  - key: storage.public_network
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: managed
+    sources:
+      - source_kind: arm
+        reference: arm.storage_account.resource
+        version: "2023-05-01"
+        role: primary
+        required: true
+      - source_kind: defender
+        reference: synthetic.defender.storage.public_network
+        version: synthetic-v1
+        role: corroborating
+        required: false
+        verdict_selector: verdict.status
+    assertion:
+      selector: properties.publicNetworkAccess
+      operator: not_in
+      expected:
+        - Enabled
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - properties.publicNetworkAccess
+        corroborating:
+          - resource_type
+          - verdict.status
+    state_rules: *state_rules
+    remediation:
+      description: Public network access를 비활성화한다.
+      property: properties.publicNetworkAccess
+      desired_value: Disabled
+    verification:
+      source_kind: arm
+      assertion:
+        selector: properties.publicNetworkAccess
+        operator: equals
+        expected: Disabled
+
+  - key: storage.blob_soft_delete
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: custom
+    sources:
+      - source_kind: storage_service
+        reference: arm.storage_account.blob_service
+        version: "2023-05-01"
+        role: primary
+        required: true
+    assertion:
+      all:
+        - selector: properties.deleteRetentionPolicy.enabled
+          operator: equals
+          expected: true
+        - selector: properties.deleteRetentionPolicy.days
+          operator: greater_than_or_equal
+          expected: 7
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - properties.deleteRetentionPolicy.enabled
+          - properties.deleteRetentionPolicy.days
+    state_rules: *state_rules
+    remediation:
+      description: Blob soft delete 보존 기간을 7일 이상으로 설정한다.
+      desired_changes:
+        - property: properties.deleteRetentionPolicy.enabled
+          operator: equals
+          desired_value: true
+        - property: properties.deleteRetentionPolicy.days
+          operator: greater_than_or_equal
+          desired_value: 7
+    verification:
+      source_kind: storage_service
+      assertion:
+        all:
+          - selector: properties.deleteRetentionPolicy.enabled
+            operator: equals
+            expected: true
+          - selector: properties.deleteRetentionPolicy.days
+            operator: greater_than_or_equal
+            expected: 7
+
+  - key: storage.redundancy
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: managed
+    sources:
+      - source_kind: arm
+        reference: arm.storage_account.resource
+        version: "2023-05-01"
+        role: primary
+        required: true
+      - source_kind: advisor
+        reference: synthetic.advisor.storage.redundancy
+        version: synthetic-v1
+        role: corroborating
+        required: false
+        verdict_selector: verdict.status
+    assertion:
+      selector: sku.name
+      operator: in
+      expected:
+        - Standard_ZRS
+        - Standard_GRS
+        - Standard_RAGRS
+        - Standard_GZRS
+        - Standard_RAGZRS
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - sku.name
+        corroborating:
+          - resource_type
+          - verdict.status
+    state_rules: *state_rules
+    remediation:
+      description: Zone 또는 geo-redundant SKU로 변경한다.
+      property: sku.name
+      allowed_values:
+        - Standard_ZRS
+        - Standard_GRS
+        - Standard_RAGRS
+        - Standard_GZRS
+        - Standard_RAGZRS
+    verification:
+      source_kind: arm
+      assertion:
+        selector: sku.name
+        operator: in
+        expected:
+          - Standard_ZRS
+          - Standard_GRS
+          - Standard_RAGRS
+          - Standard_GZRS
+          - Standard_RAGZRS
+
+  - key: storage.private_endpoint
+    version: "1.0.0"
+    resource_type: Microsoft.Storage/storageAccounts
+    evaluator_kind: managed
+    sources:
+      - source_kind: arg
+        reference: arg.storage_account.private_endpoints
+        version: query-sha256-synthetic-v1
+        role: primary
+        required: true
+      - source_kind: aprl
+        reference: synthetic.aprl.storage.private_endpoint
+        version: synthetic-v1
+        role: corroborating
+        required: false
+        verdict_selector: verdict.status
+    assertion:
+      selector: relationships.privateEndpoint
+      operator: exists
+      expected: true
+    scope_conditions:
+      same_resource_id: true
+      required_payload_fields:
+        primary:
+          - resource_type
+          - relationships.privateEndpoint
+        corroborating:
+          - resource_type
+          - verdict.status
+    state_rules: *state_rules
+    remediation:
+      description: Storage Account에 연결된 private endpoint를 구성한다.
+      resource: Microsoft.Network/privateEndpoints
+      approval_required: true
+    verification:
+      source_kind: arg
+      assertion:
+        selector: relationships.privateEndpoint
+        operator: exists
+        expected: true

@@ -1,0 +1,96 @@
+{
+  "fixture_id": "synthetic-storage-account-noncompliant",
+  "evidence": [
+    {
+      "source_kind": "arm",
+      "source_reference": "arm.storage_account.resource",
+      "source_version": "2023-05-01",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "properties": {
+          "supportsHttpsTrafficOnly": false,
+          "minimumTlsVersion": "TLS1_0",
+          "publicNetworkAccess": "Enabled"
+        },
+        "sku": {
+          "name": "Standard_LRS"
+        }
+      }
+    },
+    {
+      "source_kind": "storage_service",
+      "source_reference": "arm.storage_account.blob_service",
+      "source_version": "2023-05-01",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "properties": {
+          "deleteRetentionPolicy": {
+            "enabled": false,
+            "days": 0
+          }
+        }
+      }
+    },
+    {
+      "source_kind": "arg",
+      "source_reference": "arg.storage_account.private_endpoints",
+      "source_version": "query-sha256-synthetic-v1",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "relationships": {
+          "privateEndpoint": null
+        }
+      }
+    },
+    {
+      "source_kind": "azure_policy",
+      "source_reference": "synthetic.azure_policy.storage.secure_transfer",
+      "source_version": "synthetic-v1",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "verdict": {"status": "fail"}
+      }
+    },
+    {
+      "source_kind": "defender",
+      "source_reference": "synthetic.defender.storage.public_network",
+      "source_version": "synthetic-v1",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "verdict": {"status": "fail"}
+      }
+    },
+    {
+      "source_kind": "advisor",
+      "source_reference": "synthetic.advisor.storage.redundancy",
+      "source_version": "synthetic-v1",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "verdict": {"status": "fail"}
+      }
+    },
+    {
+      "source_kind": "aprl",
+      "source_reference": "synthetic.aprl.storage.private_endpoint",
+      "source_version": "synthetic-v1",
+      "resource_id": "synthetic-storage-account-noncompliant",
+      "status": "complete",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "verdict": {"status": "fail"}
+      }
+    }
+  ]
+}

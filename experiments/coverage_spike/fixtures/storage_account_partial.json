@@ -1,0 +1,22 @@
+{
+  "fixture_id": "synthetic-storage-account-partial",
+  "evidence": [
+    {
+      "source_kind": "arm",
+      "source_reference": "arm.storage_account.resource",
+      "source_version": "2023-05-01",
+      "resource_id": "synthetic-storage-account-partial",
+      "status": "partial",
+      "payload": {
+        "resource_type": "Microsoft.Storage/storageAccounts",
+        "properties": {
+          "minimumTlsVersion": "TLS1_2",
+          "publicNetworkAccess": "Disabled"
+        },
+        "sku": {
+          "name": "Standard_ZRS"
+        }
+      }
+    }
+  ]
+}
