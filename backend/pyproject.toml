@@ -22,6 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
     "ruff>=0.2.0",
 ]
 chat = [
@@ -41,6 +42,9 @@ aiops-chat = "main:main"
 
 [tool.uv]
 prerelease = "allow"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 120
