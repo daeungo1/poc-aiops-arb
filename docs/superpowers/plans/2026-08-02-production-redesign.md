@@ -124,12 +124,13 @@ Expected: all registry and evaluator tests pass.
 - Create: `backend/scripts/run_coverage_spike.py`
 - Create: `backend/tests/enterprise/test_coverage.py`
 - Create: `experiments/coverage_spike/README.md`
-- Generate: `experiments/coverage_spike/reports/coverage-summary.json`
-- Generate: `experiments/coverage_spike/reports/coverage-summary.md`
+- Generate: `experiments/coverage_spike/reports/current.json`
+- Generate: `experiments/coverage_spike/reports/generations/<generation_id>/coverage-summary.json`
+- Generate: `experiments/coverage_spike/reports/generations/<generation_id>/coverage-summary.md`
 
 **Interfaces:**
 - Consumes: `ControlRegistry` and `DeterministicEvaluator`.
-- Produces: `CoverageReport`, `build_coverage_report()`, and a CLI returning non-zero when fixture verdicts differ from expected outputs.
+- Produces: `CoverageReport`, `build_coverage_report()`, `read_current_report_bundle()`, and a CLI returning non-zero when fixture verdicts differ from expected outputs or fixture IDs are duplicated.
 
 - [ ] **Step 1: Add a failing coverage test**
 
@@ -150,11 +151,15 @@ Expected: FAIL because coverage reporting does not exist.
 
 The JSON report contains counts and ratios for machine-verifiable, managed-source, custom, agent-assisted, manual, unknown, and conflicts. The Markdown report lists every control, source mapping, fixture verdict, and unmapped reason.
 
+Canonical JSON and Markdown content hashes determine a stable `generation_id`. Both files are fsynced into an immutable `reports/generations/<generation_id>/` bundle before one small `reports/current.json` manifest is atomically replaced. That manifest is the only canonical publication boundary and carries the exact relative path and SHA-256 hash of each report. Existing matching generations are reused; conflicting content is rejected. Fixture IDs must be globally unique across fixture files, with duplicates recorded as structured implementation-gate errors.
+
+Manifest temporary files live only under `reports/.staging`. Publish and read startup scavenge stale staging entries without following symlinks or reparse points. Immediate cleanup is best effort; a path retained by a Windows handle remains recoverable in `.staging` and is retried on the next run. Publishing fails closed if stale cleanup still cannot complete. Since the reader API has no structured cleanup-warning result, reading also fails closed and propagates the cleanup exception.
+
 - [ ] **Step 4: Verify the Phase 1 gate**
 
 Run: `cd backend; uv run pytest tests/enterprise -v; uv run python scripts/run_coverage_spike.py`
 
-Expected: all tests pass, both reports are generated, fixture mismatches are zero, and the command exits 0.
+Expected: all tests pass, `current.json` resolves to one hash-validated immutable report bundle, fixture mismatches are zero, and the command exits 0.
 
 - [ ] **Step 5: Create the implementation branch**
 
@@ -422,7 +427,7 @@ Expected: all tests pass and Ruff reports no errors introduced by this work.
 
 Run: `cd backend; uv run python scripts/run_coverage_spike.py`
 
-Expected: zero fixture mismatches and regenerated JSON/Markdown reports.
+Expected: zero fixture mismatches and a regenerated `current.json` pointing to the deterministic immutable JSON/Markdown generation bundle.
 
 - [ ] **Step 3: Run frontend checks**
 

@@ -14,6 +14,7 @@ def _run_import_probe(code: str):
         check=True,
         capture_output=True,
         text=True,
+        timeout=60,
     )
     return json.loads(result.stdout)
 

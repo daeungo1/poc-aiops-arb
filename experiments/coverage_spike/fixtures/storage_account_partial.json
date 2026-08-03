@@ -1,5 +1,9 @@
 {
   "fixture_id": "synthetic-storage-account-partial",
+  "metadata": {
+    "classification": "exploratory",
+    "comparable": false
+  },
   "evidence": [
     {
       "source_kind": "arm",

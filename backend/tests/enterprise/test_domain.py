@@ -29,6 +29,7 @@ CANONICAL_STATE_RULES = {
     "evidence_selector_missing": "unknown",
     "evidence_value_unknown": "unknown",
     "evidence_conflict": "unknown",
+    "managed_source_conflict": "unknown",
     "corroborating_signal_invalid": "unknown",
     "assertion_operator_unsupported": "unknown",
     "assertion_value_invalid": "unknown",

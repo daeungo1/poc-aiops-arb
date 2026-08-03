@@ -142,6 +142,19 @@ cd backend && uv run python main.py -s <SUBSCRIPTION_ID> -o all --output-dir ./r
 | `--dry-run` | 리소스 목록만 출력 |
 | `-p, --port` | 서버 모드일 때 포트(기본 `5100`) |
 
+### Enterprise coverage spike gate
+
+합성 Storage fixture로 결정론 evaluator와 implementation gate를 검증하려면 저장소 루트에서 실행합니다.
+
+```powershell
+uv run --project backend python backend/scripts/run_coverage_spike.py
+```
+
+canonical 산출물의 진입점은 `experiments/coverage_spike/reports/current.json` 하나입니다. 이 manifest는
+content hash 기반 immutable generation 아래의 JSON과 Markdown 경로 및 SHA-256을 함께 지정합니다.
+consumer는 `enterprise.coverage.read_current_report_bundle()`로 manifest와 두 파일을 검증해 읽어야 합니다.
+상세한 gate 의미와 artifact 계약은 `experiments/coverage_spike/README.md`를 참고합니다.
+
 ### Python에서 평가 엔진만 사용(예시)
 
 ```python

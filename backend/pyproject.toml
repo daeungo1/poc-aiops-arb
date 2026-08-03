@@ -17,6 +17,8 @@ dependencies = [
     # Data processing
     "pyyaml>=6.0.1",
     "python-dotenv>=1.0.0",
+    # Coverage report cross-process publication lock
+    "filelock>=3.16.0",
 ]
 
 [project.optional-dependencies]

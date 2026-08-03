@@ -1,0 +1,395 @@
+{
+  "control_coverage": {
+    "agent_assisted": {
+      "count": 0,
+      "denominator": 6,
+      "ratio": 0.0
+    },
+    "custom_assertion": {
+      "count": 6,
+      "denominator": 6,
+      "ratio": 1.0
+    },
+    "custom_evaluator": {
+      "count": 2,
+      "denominator": 6,
+      "ratio": 0.3333333333333333
+    },
+    "machine_verifiable": {
+      "count": 6,
+      "denominator": 6,
+      "ratio": 1.0
+    },
+    "managed_source": {
+      "count": 4,
+      "denominator": 6,
+      "ratio": 0.6666666666666666
+    },
+    "manual": {
+      "count": 0,
+      "denominator": 6,
+      "ratio": 0.0
+    }
+  },
+  "controls": [
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "custom",
+      "key": "storage.blob_soft_delete",
+      "machine_verifiable": true,
+      "managed_source_covered": false,
+      "sources": [
+        {
+          "reference": "arm.storage_account.blob_service",
+          "required": true,
+          "role": "primary",
+          "source_kind": "storage_service",
+          "version": "2023-05-01"
+        }
+      ],
+      "unmapped_reason": null
+    },
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "custom",
+      "key": "storage.minimum_tls",
+      "machine_verifiable": true,
+      "managed_source_covered": false,
+      "sources": [
+        {
+          "reference": "arm.storage_account.resource",
+          "required": true,
+          "role": "primary",
+          "source_kind": "arm",
+          "version": "2023-05-01"
+        }
+      ],
+      "unmapped_reason": null
+    },
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "managed",
+      "key": "storage.private_endpoint",
+      "machine_verifiable": true,
+      "managed_source_covered": true,
+      "sources": [
+        {
+          "reference": "arg.storage_account.private_endpoints",
+          "required": true,
+          "role": "primary",
+          "source_kind": "arg",
+          "version": "query-sha256-synthetic-v1"
+        },
+        {
+          "reference": "synthetic.aprl.storage.private_endpoint",
+          "required": false,
+          "role": "corroborating",
+          "source_kind": "aprl",
+          "version": "synthetic-v1"
+        }
+      ],
+      "unmapped_reason": null
+    },
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "managed",
+      "key": "storage.public_network",
+      "machine_verifiable": true,
+      "managed_source_covered": true,
+      "sources": [
+        {
+          "reference": "arm.storage_account.resource",
+          "required": true,
+          "role": "primary",
+          "source_kind": "arm",
+          "version": "2023-05-01"
+        },
+        {
+          "reference": "synthetic.defender.storage.public_network",
+          "required": false,
+          "role": "corroborating",
+          "source_kind": "defender",
+          "version": "synthetic-v1"
+        }
+      ],
+      "unmapped_reason": null
+    },
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "managed",
+      "key": "storage.redundancy",
+      "machine_verifiable": true,
+      "managed_source_covered": true,
+      "sources": [
+        {
+          "reference": "arm.storage_account.resource",
+          "required": true,
+          "role": "primary",
+          "source_kind": "arm",
+          "version": "2023-05-01"
+        },
+        {
+          "reference": "synthetic.advisor.storage.redundancy",
+          "required": false,
+          "role": "corroborating",
+          "source_kind": "advisor",
+          "version": "synthetic-v1"
+        }
+      ],
+      "unmapped_reason": null
+    },
+    {
+      "custom_assertion_covered": true,
+      "evaluator_kind": "managed",
+      "key": "storage.secure_transfer",
+      "machine_verifiable": true,
+      "managed_source_covered": true,
+      "sources": [
+        {
+          "reference": "arm.storage_account.resource",
+          "required": true,
+          "role": "primary",
+          "source_kind": "arm",
+          "version": "2023-05-01"
+        },
+        {
+          "reference": "synthetic.azure_policy.storage.secure_transfer",
+          "required": false,
+          "role": "corroborating",
+          "source_kind": "azure_policy",
+          "version": "synthetic-v1"
+        }
+      ],
+      "unmapped_reason": null
+    }
+  ],
+  "deployment_readiness": {
+    "status": "blocked",
+    "unmet_conditions": [
+      {
+        "code": "live_azure_adapter_api_validation",
+        "description": "Live Azure adapters and API behavior have not been validated."
+      },
+      {
+        "code": "rbac_api_limitations_validated",
+        "description": "Required RBAC and Azure API limitations are not yet documented and validated."
+      },
+      {
+        "code": "human_mapping_verdict_review",
+        "description": "Human review of source mappings and verdicts is pending."
+      },
+      {
+        "code": "ui_contract_approval",
+        "description": "The UI contract has not been approved."
+      }
+    ]
+  },
+  "evaluator_kind_counts": {
+    "agent_assisted": 0,
+    "custom": 2,
+    "managed": 4,
+    "manual": 0
+  },
+  "fixture_summary": {
+    "all_conflicts": {
+      "count": 0,
+      "denominator": 18,
+      "ratio": 0.0
+    },
+    "fixtures_evaluated": 3,
+    "managed_source_conflicts": {
+      "count": 0,
+      "denominator": 18,
+      "ratio": 0.0
+    },
+    "mismatches": {
+      "count": 0,
+      "denominator": 12,
+      "ratio": 0.0
+    },
+    "unknown": {
+      "count": 6,
+      "denominator": 18,
+      "ratio": 0.3333333333333333
+    },
+    "verdicts_evaluated": 18
+  },
+  "fixtures": {
+    "storage_account_compliant": {
+      "classification": "oracle",
+      "comparable": true,
+      "expected_comparisons": 6,
+      "fixture_id": "synthetic-storage-account-compliant",
+      "mismatch_count": 0,
+      "verdicts": {
+        "storage.blob_soft_delete": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        },
+        "storage.minimum_tls": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        },
+        "storage.private_endpoint": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        },
+        "storage.public_network": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        },
+        "storage.redundancy": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        },
+        "storage.secure_transfer": {
+          "expected_reason_code": "assertion_matched",
+          "expected_state": "pass",
+          "matches_expected": true,
+          "reason_code": "assertion_matched",
+          "state": "pass"
+        }
+      }
+    },
+    "storage_account_noncompliant": {
+      "classification": "oracle",
+      "comparable": true,
+      "expected_comparisons": 6,
+      "fixture_id": "synthetic-storage-account-noncompliant",
+      "mismatch_count": 0,
+      "verdicts": {
+        "storage.blob_soft_delete": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        },
+        "storage.minimum_tls": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        },
+        "storage.private_endpoint": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        },
+        "storage.public_network": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        },
+        "storage.redundancy": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        },
+        "storage.secure_transfer": {
+          "expected_reason_code": "assertion_not_matched",
+          "expected_state": "fail",
+          "matches_expected": true,
+          "reason_code": "assertion_not_matched",
+          "state": "fail"
+        }
+      }
+    },
+    "storage_account_partial": {
+      "classification": "exploratory",
+      "comparable": false,
+      "expected_comparisons": 0,
+      "fixture_id": "synthetic-storage-account-partial",
+      "mismatch_count": 0,
+      "verdicts": {
+        "storage.blob_soft_delete": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_missing",
+          "state": "unknown"
+        },
+        "storage.minimum_tls": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_partial",
+          "state": "unknown"
+        },
+        "storage.private_endpoint": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_missing",
+          "state": "unknown"
+        },
+        "storage.public_network": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_partial",
+          "state": "unknown"
+        },
+        "storage.redundancy": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_partial",
+          "state": "unknown"
+        },
+        "storage.secure_transfer": {
+          "expected_reason_code": null,
+          "expected_state": null,
+          "matches_expected": null,
+          "reason_code": "evidence_partial",
+          "state": "unknown"
+        }
+      }
+    }
+  },
+  "gate_errors": [],
+  "implementation_gate": {
+    "conditions": {
+      "internal_totals_valid": true,
+      "oracle_complete": true,
+      "zero_fixture_mismatches": true
+    },
+    "status": "passed"
+  },
+  "internal_totals": {
+    "errors": [],
+    "valid": true
+  },
+  "total_controls": 6,
+  "validation_mode": "synthetic_fixture",
+  "verdict_state_counts": {
+    "exempted": 0,
+    "fail": 6,
+    "manual_pending": 0,
+    "not_applicable": 0,
+    "pass": 6,
+    "unknown": 6
+  }
+}

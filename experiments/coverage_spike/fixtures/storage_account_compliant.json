@@ -1,5 +1,9 @@
 {
   "fixture_id": "synthetic-storage-account-compliant",
+  "metadata": {
+    "classification": "oracle",
+    "comparable": true
+  },
   "evidence": [
     {
       "source_kind": "arm",

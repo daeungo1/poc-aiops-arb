@@ -147,7 +147,7 @@ class DeterministicEvaluator:
         except (TypeError, ValueError):
             return self._verdict(control, "corroborating_signal_invalid", applicable)
         if any(signal is not primary_signal for signal in corroborating_signals):
-            return self._verdict(control, "evidence_conflict", applicable)
+            return self._verdict(control, "managed_source_conflict", applicable)
 
         return self._verdict(
             control,

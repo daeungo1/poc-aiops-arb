@@ -327,7 +327,7 @@ def test_conflicting_corroborating_verdict_signal_is_unknown(registry):
     verdict = DeterministicEvaluator().evaluate(control, [primary, corroborating])
 
     assert verdict.state is VerdictState.UNKNOWN
-    assert verdict.reason_code == "evidence_conflict"
+    assert verdict.reason_code == "managed_source_conflict"
     assert set(verdict.evidence_hashes) == {primary.content_hash, corroborating.content_hash}
 
 
@@ -354,7 +354,7 @@ def test_each_managed_source_kind_conflict_is_unknown(registry, control_key):
     verdict = DeterministicEvaluator().evaluate(control, evidence)
 
     assert verdict.state is VerdictState.UNKNOWN
-    assert verdict.reason_code == "evidence_conflict"
+    assert verdict.reason_code == "managed_source_conflict"
 
 
 def test_matching_corroborating_verdict_signal_preserves_primary_verdict(registry):

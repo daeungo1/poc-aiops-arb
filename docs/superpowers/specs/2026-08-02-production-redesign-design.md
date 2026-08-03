@@ -50,10 +50,25 @@ experiments/coverage_spike/
   fixtures/storage_account_noncompliant.json
   expected/storage_account_compliant.json
   expected/storage_account_noncompliant.json
-  reports/coverage-summary.md
+  reports/current.json
+  reports/generations/<generation_id>/coverage-summary.json
+  reports/generations/<generation_id>/coverage-summary.md
 ```
 
 샘플 fixture는 비밀값과 실제 구독 식별자를 포함하지 않는 합성 ARM/ARG 응답을 사용한다.
+fixture file 전체에서 `fixture_id`는 전역으로 유일해야 하며, 중복은 구조화된 implementation gate 오류다.
+
+JSON과 Markdown의 canonical content hash로 결정론적 `generation_id`를 계산한다. 두 파일을 새 immutable
+generation directory에 fsync/close한 뒤, 정확한 상대 경로와 SHA-256 hash를 담은 `reports/current.json`
+하나만 atomic replacement한다. current manifest가 유일한 canonical publication boundary이며 두 report
+경로를 각각 교체하는 방식은 사용하지 않는다. reader는 manifest를 한 번 읽고 두 hash와 content 기반
+generation ID를 모두 검증하여 일관된 bundle만 반환한다.
+
+Manifest 임시 파일은 전용 `reports/.staging` directory에만 둔다. publish와 read 시작 시 no-follow
+scavenger가 stale staging file/directory를 정리하며, symlink/reparse point의 target은 절대 순회하지 않는다.
+실패 직후 cleanup은 best effort이고 Windows가 handle/path를 계속 점유하면 staged artifact를 다음 실행의
+복구 대상으로 남긴다. stale cleanup이 계속 실패하면 publish는 current manifest를 변경하지 않고 fail closed한다.
+reader API에 구조화된 warning result가 없으므로 reader도 cleanup 예외를 전달하며 fail closed한다.
 
 ### 3.3 ControlDefinition 계약
 
@@ -93,7 +108,8 @@ Checklist YAML
   -> normalized EvidenceRecord
   -> deterministic evaluator
   -> Verdict
-  -> coverage/conflict report
+  -> immutable coverage/conflict report generation
+  -> current.json publication
 ```
 
 Phase 1의 기본 검증은 합성 fixture로 수행한다. 실제 Azure 호출은 명시적인 환경 설정과 권한이 제공된 경우에만 별도 integration test로 실행한다.
@@ -116,6 +132,9 @@ Phase 1의 기본 검증은 합성 fixture로 수행한다. 실제 Azure 호출�
 5. 속성이 누락된 fixture가 Fail이 아니라 Unknown을 생성하는지 검증한다.
 6. 충돌 원천 입력이 conflict reason을 생성하는지 검증한다.
 7. coverage 보고서의 분자 합계와 전체 control 수를 검증한다.
+8. fixture file 간 중복 `fixture_id`가 implementation gate와 CLI를 실패시키는지 검증한다.
+9. staging 또는 manifest 교체 실패 시 이전 current generation이 유지되고, 즉시 best-effort cleanup이
+  불가능한 Windows handle failure는 `.staging`에만 남았다가 다음 publish/read에서 복구되는지 검증한다.
 
 ## 8. Phase 2 진입 게이트
 

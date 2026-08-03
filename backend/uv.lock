@@ -180,6 +180,7 @@ dependencies = [
     { name = "azure-mgmt-resource" },
     { name = "azure-mgmt-resourcegraph" },
     { name = "azure-mgmt-subscription" },
+    { name = "filelock" },
     { name = "openai" },
     { name = "psycopg2-binary" },
     { name = "python-dotenv" },
@@ -211,6 +212,7 @@ requires-dist = [
     { name = "azure-mgmt-resourcegraph", specifier = ">=8.0.0" },
     { name = "azure-mgmt-subscription", specifier = ">=3.2.0b1" },
     { name = "fastapi", marker = "extra == 'chat'", specifier = ">=0.115.0" },
+    { name = "filelock", specifier = ">=3.16.0" },
     { name = "msal", marker = "extra == 'chat'", specifier = ">=1.28.0" },
     { name = "openai", specifier = ">=1.12.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
@@ -654,6 +656,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/47/75f6bea02e797abff1bca968d5997793898032d9923c1935ae2efdece642/fastapi-0.129.0.tar.gz", hash = "sha256:61315cebd2e65df5f97ec298c888f9de30430dd0612d59d6480beafbc10655af", size = 375450, upload-time = "2026-02-12T13:54:52.541Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9e/dd/d0ee25348ac58245ee9f90b6f3cbb666bf01f69be7e0911f9851bddbda16/fastapi-0.129.0-py3-none-any.whl", hash = "sha256:b4946880e48f462692b31c083be0432275cbfb6e2274566b1be91479cc1a84ec", size = 102950, upload-time = "2026-02-12T13:54:54.528Z" },
+]
+
+[[package]]
+name = "filelock"
+version = "3.32.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/57/3ba6e6cb097f85b855b00163d169f35365f44277df044dcf96d55b8f62a3/filelock-3.32.2.tar.gz", hash = "sha256:c33351e1f49cae33414acbc6d56784e6ecee82514ec90795da1161fc4836b5b8", size = 217172, upload-time = "2026-07-29T22:46:04.895Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/e8/72f8cef9fdfeffe06213fe8508039396ee48daa0e3259457ed766173bfd6/filelock-3.32.2-py3-none-any.whl", hash = "sha256:87dd94cf281e586d135fa51132b8e3d9a598b316e90377a288663c9321036c82", size = 98830, upload-time = "2026-07-29T22:46:03.52Z" },
 ]
 
 [[package]]
