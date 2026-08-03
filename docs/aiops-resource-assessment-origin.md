@@ -140,67 +140,147 @@ Frontend(React SPA) ↔ Backend(FastAPI + AG-UI) ↔ Azure Resource Graph/OBO, A
 
 ---
 
-## 8. 제품화 방향 요약
+## Ⅱ부 — 제품화 방향: 프로덕션 아키텍처 재평가
 
-PoC의 핵심 자산은 도메인 학습(스코프 모델·UX 흐름·정리 문서)이며,
-프로덕션은 감사 가능한 판정을 위해 코어를 재설계하는 방향이 적합.
-
----
-
-## 9. 코드 자산 분해(실측)
-
-- 판정·생성 코어: `assessment_engine.py` + `terraform_generator.py` 중심
-- 수제 배관: 인증, DB SQL, AG-UI 배관
-- UI 보드·차트·팝업: UX 자산은 계승 가능
-- 배포 Terraform IaC: 거버넌스 대응 노하우 재사용 가치
+> 이 파트는 Ⅰ부(§1~§7)의 현황 기록과 분리된 **제안/의사결정 보류 영역**이다.
 
 ---
 
-## 10. 유지보수 관점 검토
+## 8. 방향 요약
 
-- 체크리스트 수작업 유지 비용 큼
-- LLM 전판정 드리프트 관리 부재
-- 인증/DB/agent 배관의 관리형 대체 가능성 높음
+**이 레포가 제품에 기여하는 핵심 자산은 도메인 학습(스코프 모델·UX 흐름·본 문서 정리)이다.**
+PoC는 E2E 흐름과 사용자 경험을 증명했다. 다만 프로덕션은 감사 가능한 판정을 요구하므로,
+현재 LLM 단독 판정 코어는 개조보다 재설계가 적합하다는 판단이다.
 
 ---
 
-## 11. 목표 그림 (build vs adopt)
+## 9. 코드 자산의 분해 (실측)
 
-- 판정 corpus: APRL/Advisor/Defender/Policy 등 관리형 source 우선
-- 판정 실행: 결정론 기본 + LLM 보조
-- Evidence: snapshot/provenance 축 구축
-- Terraform: 생성→검증→재투입→draft PR의 폐루프
-- Agent/Eval/Auth: Foundry/Easy Auth 등 관리형 채택
+백엔드 ~9.9k LOC + 프론트 ~7.3k LOC:
+
+| 분류 | 규모 | 평가 |
+|---|---|---|
+| **판정·생성 코어** (`assessment_engine.py` 491 + `terraform_generator.py` 635) | ~1.1k LOC | 실체는 프롬프트 + JSON 파싱 중심. PoC 검증에는 충분했으나 프로덕션의 감사 가능 판정 요구와는 간극이 커 재설계 대상 |
+| **수제 배관** (`entra_sso.py` 406, `agent/db/*` ~2.5k, `agui_server.py` 1.35k, `useAgUiChat.ts` 251 등) | ~5k+ LOC | 품질은 양호하나 관리형 대체재가 존재하는 자체 구현 비중이 높음 |
+| **UI 보드·차트·팝업** | ~6k LOC | 제품 UX 원형으로 계승 가치 높음. 단 판정 모델 변경 시 데이터 계약 재정의 필요 |
+| **배포 Terraform IaC** | - | PE 전용·거버넌스 대응 노하우 포함, 재사용 가치 높음 |
+
+프로덕션 관점에서 재검토가 필요한 두 지점:
+
+1. `check_method`·`condition_field` 미사용 컬럼 구현을 자체 룰엔진으로 완성할지 여부  
+   → 유지보수 최소화 목표와 상충 가능
+2. 기존 경계 내 점진 개조 vs 재설계 비용  
+   → 판정 권위가 바뀌면 engine→DB→report→chat→dashboard 계약이 연쇄 영향이라, 점진 개조와 재설계의 비용 차가 크지 않음
+
+---
+
+## 10. 유지보수 관점 검토 — 현 구조를 그대로 제품화할 경우 반복 비용
+
+1. **체크리스트 corpus 수작업 유지**: Azure 변화에 조직이 직접 갱신해야 함
+2. **LLM 전판정 드리프트 관리 부재**: eval 없이 판정 안정성 보장 어려움
+3. **수제 인증 스택**: Easy Auth 대체 가능
+4. **수제 DB 계층(수기 SQL 45개) + 수제 AG-UI 클라이언트**: 소유 코드 부담 증가
+5. **자체 agent 런타임 배관**: Foundry hosted agent/evaluation/tracing으로 관리형 이관 가능
+
+---
+
+## 11. 목표 그림 — build vs adopt
+
+원칙: **Microsoft가 유지하는 것은 adopt, 차별화 지점은 build**.
+
+| 계층 | 방향 | 근거 |
+|---|---|---|
+| **판정 corpus** | **ADOPT**: APRL(KQL pin) + Advisor API + Defender assessments + Azure Policy state | 기준 유지보수 부담을 Microsoft 쪽으로 이관 |
+| **판정 실행** | **BUILD (소~중, 미결정)**: ControlDefinition registry + 6-상태 모델(Pass/Fail/Unknown/N:A/Exempted/ManualPending), 기본은 결정론, 매핑 불가만 `agent_assisted` | **제품의 실질 IP ①**. 단 registry 저작·유지 방식은 **§14에서 A/B/C/D 택일** |
+| **Evidence** | **BUILD (소)**: snapshot_run/resource_snapshot + provenance | 감사 가능성의 최소 단위 |
+| **Terraform 생성·검증 루프** | **BUILD (핵심)**: 생성→fmt/validate→fabricated-credential plan→Checkov→error certificate 재투입→draft PR + semantic 위험 human review | **제품의 실질 IP ②** |
+| **Agent 런타임** | **ADOPT**: Foundry hosted agent + middleware + tracing | 챗봇 역할을 실행 런처 중심에서 결과 해석·후속 질의 중심으로 재정의 |
+| **Eval** | **ADOPT + BUILD (소)**: Foundry evaluation + golden fixture oracle + CI gate | 모델 드리프트 감지 |
+| **인증** | **ADOPT**: Easy Auth + OBO | 수제 MSAL/UAMI 배관 단순화 |
+| **UI** | **RESPEC**: 보드/드릴다운 UX 계승, 데이터 계약 재정의 | |
 
 ---
 
 ## 12. 계승 자산과 이관 대상
 
-계승:
-- 구독 스코프 격리 모델
-- 실행→리소스→검사 3계층 결과 개념
-- UI 흐름, 배포 IaC 운영 노하우
+**계승:**
+- 구독 스코프 격리 모델(OBO∩MI 교집합, 헤더 검증)
+- 실행→리소스→검사 3계층 결과 granularity
+- 체크리스트 계층 스키마 개념(categories→items→checks)
+- UI 흐름(4보드 + 챗 + drill-down)
+- 배포 IaC의 거버넌스 대응(PE 전용 등)
 
-이관/대체:
-- LLM 전판정 엔진
-- 수작업 YAML corpus 중심 운영
-- 수제 인증·챗·DB 배관
-
----
-
-## 13. 남는 불확실성
-
-1. 관리형 source 기반 coverage 실측 필요
-2. Terraform semantic 안전성은 human review 필요
-3. Foundry 관리형 종속의 제약 평가 필요
-4. reliability/security/cost/ops 전 영역 커버리지 균형 필요
+**이관/대체:**
+- LLM 전판정 엔진 → 결정론 기본 + LLM 보조
+- 수작업 YAML 중심 corpus 운영 → 관리형 source + 조직 고유 항목
+- 수제 인증·챗·DB 배관 → Easy Auth·Foundry·프레임워크
 
 ---
 
-## 14. 결정 보류 항목
+## 13. 남는 불확실성 (축소 없이)
 
-체크리스트 저작·유지 방식(A/B/C/D안)과 온보딩 실험을 통해,
-registry 운영 방식과 단계적 조합 전략을 확정한다.
+1. **coverage 실측 선행 필요**: ARB 항목 중 결정론 매핑 가능한 비율 미지수
+2. **Terraform 루프 한계**: validate/plan/scanner만으로 semantic 안전 보장 불가
+3. **Foundry 관리형 종속 반대급부**: region/기능 제약과 플랫폼 의존성
+4. **source 편중 보완**: reliability/security/cost/ops 전 영역 밀도 균형 필요
+
+---
+
+## 14. 결정 보류 — 체크리스트 저작·유지 방식 비교 (A/B/C/D)
+
+> 상태: 미결정. coverage 실측(§13-1)과 파일럿 이후 최종 결정.
+
+### 14.1 4안 정의 (canonical·생성·갱신 흐름)
+
+| 안 | canonical | registry 생성 | 갱신 흐름 |
+|---|---|---|---|
+| **A. 원본 소스 형태** | 자연어 문서(Excel/위키/YAML 자유 기술) | 문서를 LLM이 매 갱신마다 재컴파일(파생 산출물) | 문서 편집 → 전체 재컴파일 |
+| **B. 구조화 canonical + 저작 지원** | 구조화 registry 레코드 | 자연어(+구조 힌트) → LLM 초안 → 결정론 게이트(스키마·source 실존·KQL dry-run) → 사람 확정 | 항목 편집 → 항목 재구조화 → 버전 커밋 → 고정 스냅샷 회귀 |
+| **C. 필드별 저작 표면 + 개선 플라이휠** | 구조화 registry 레코드(B 동일) | B + 필드별 UI(텍스트/NL, scope picker, source 매핑 브라우저, introspection builder, 파라미터화 KQL 템플릿) | B + 운영 데이터 기반 승격/검토 신호 자동 생산 |
+| **D. 자연어 skills 기반 agentic 판정** | skill 문서(체크리스트 직접 해석) | registry 컴파일 없이 agent가 런타임 판정 | 평가마다 재해석/재판정 |
+
+### 14.2 8축 비교표
+
+| 축 | A | B | C | D |
+|---|---|---|---|---|
+| 운영자 진입장벽 | 최저 | 낮음 | 중간 | 낮음 |
+| 판정 재현성/감사성 | 낮음 | 높음 | 높음 | 낮음(전면 적용 시) |
+| 깨지기 쉬움 | 높음 | 중간 | 낮음 | 높음 |
+| 재사용성/이식성 | 낮음 | 중간 | 높음 | 중간 |
+| 구축 비용 | 최저 | 중간 | 최고 | 중간 |
+| 유지보수 소유 구조 | LLM 종속 큼 | 게이트/회귀 중심 | 템플릿/플라이휠까지 포함 | eval 인프라 부담 큼 |
+| 표현력 확장 방식 | LLM 임의 | custom KQL 예산 | 템플릿 추가 | 프롬프트/skills |
+| coverage 개선 경로 | 약함 | 수동 재매핑 | 구조적 플라이휠 | eval 의존 |
+
+### 14.3 D안 장점/단점 대응 (1~3)
+
+| # | 장점(맞는 지점) | 단점(판정 권위로 쓸 때) |
+|---|---|---|
+| 1 | `agent_assisted` 항목(구조화 어려운 항목)에 자연스러움 | 외부 oracle 부재 시 verdict 자체 신뢰 확보가 어려움 |
+| 2 | Terraform 수리 루프처럼 validate/plan/scanner oracle이 있는 영역과 궁합 | 신뢰 보강을 위해 결국 golden fixture/eval 구조가 필요(구조 보존) |
+| 3 | 챗봇의 조사/해석 UX에는 유효 | hot path(대량 판정)에서 비용·지연·비결정성 증가 |
+
+위치 정리: D는 판정 corpus의 대체재라기보다 **agent tier 포장 형식**으로 제한 적용이 안전.
+
+### 14.4 공통 전제 (어느 안이든 필요)
+
+- registry **버전 관리**
+- 고정 스냅샷 기반 **자동 회귀**(신·구 병렬 실행)
+- **diff 기준면 분리**(registry 영향 vs 환경 드리프트)
+- 매핑 의미 오류에 대한 **사람 확정 단계 불가결**
+
+### 14.5 각 안의 주요 리스크
+
+- **A**: 비결정 재컴파일로 감사성 저하
+- **B**: NL→source 매핑 정확도 미검증
+- **C**: 구축 비용 최대, 잘못 설계하면 전부 `agent_assisted`로 우회
+- **D**: 판정 전면 적용 시 A와 유사한 신뢰 문제 + eval 비용 증가
+
+### 14.6 결정 시점·판단 재료
+
+1. **coverage 실측**: 관리형 source 매핑률 확인
+2. **온보딩 파일럿**: 145+ 항목 기준 저작 시간/수락률/정확도 실측
+3. **깔때기 전략 검토**: A(느슨한 import) → B(확정·버전화) → C(플라이휠) 조합 가능성 평가
 
 ---
 
@@ -208,4 +288,3 @@ registry 운영 방식과 단계적 조합 전략을 확정한다.
 
 - 이슈: `daeungo1/poc-aiops-arb#1`
 - 이슈 코멘트 리서치 노트: 0, A, B, C, D, E
-
