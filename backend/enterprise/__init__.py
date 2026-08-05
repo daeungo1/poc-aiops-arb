@@ -12,6 +12,9 @@ from .domain import (
     Verdict,
     VerdictState,
 )
+from .api import create_enterprise_router, enterprise_assessment_enabled
+from .repository import EnterpriseRepository, InMemoryEnterpriseRepository
+from .service import EnterpriseAssessmentService, EnterpriseServiceError
 
 __all__ = [
     "CANONICAL_STATE_RULES",
@@ -24,4 +27,10 @@ __all__ = [
     "SourceRole",
     "Verdict",
     "VerdictState",
+    "EnterpriseAssessmentService",
+    "EnterpriseRepository",
+    "EnterpriseServiceError",
+    "InMemoryEnterpriseRepository",
+    "create_enterprise_router",
+    "enterprise_assessment_enabled",
 ]

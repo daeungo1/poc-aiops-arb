@@ -36,6 +36,8 @@ def path_requires_user_delegated_azure(http_path: str) -> bool:
         return True
     if p == "/api/azure" or p.startswith("/api/azure/"):
         return True
+    if p == "/api/v2" or p.startswith("/api/v2/"):
+        return True
     for prefix in ("/api/assessments", "/api/terraform", "/api/downloads"):
         if p == prefix or p.startswith(prefix + "/"):
             return True

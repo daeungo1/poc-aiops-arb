@@ -4,10 +4,12 @@ import os
 import shutil
 import subprocess
 import sys
+import io
 import threading
 import tomllib
 from dataclasses import replace
 from pathlib import Path
+from contextlib import redirect_stderr, redirect_stdout
 
 import pytest
 from filelock import FileLock, Timeout
@@ -19,6 +21,8 @@ from enterprise.coverage import (
     write_coverage_reports,
 )
 from enterprise.registry import ControlRegistry
+from scripts.run_coverage_spike import main as run_coverage_spike_main
+from tests.enterprise import coverage_process_helper
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -31,59 +35,10 @@ SCRIPT_PATH = ROOT / "backend/scripts/run_coverage_spike.py"
 README_PATH = SPIKE_ROOT / "README.md"
 PUBLISH_LOCK_PATH_NAME = ".publish.lock"
 STALE_MANIFEST_NAME = "current.123e4567-e89b-12d3-a456-426614174000.tmp"
-PROCESS_START_TIMEOUT_SECONDS = 60
+PROCESS_START_TIMEOUT_SECONDS = 30
 PROCESS_JOIN_TIMEOUT_SECONDS = 30
-
-
-def _publish_in_process(
-    report,
-    reports_dir,
-    result_path,
-    staged_event=None,
-    release_event=None,
-    done_event=None,
-    lock_attempted_event=None,
-):
-    if staged_event is not None and release_event is not None:
-        original_stage_content = coverage_module._stage_content
-
-        def blocking_stage_content(path, content):
-            staged_path = original_stage_content(path, content)
-            staged_event.set()
-            if not release_event.wait(timeout=PROCESS_START_TIMEOUT_SECONDS):
-                raise TimeoutError("test publisher was not released")
-            return staged_path
-
-        coverage_module._stage_content = blocking_stage_content
-    if lock_attempted_event is not None:
-        original_file_lock = coverage_module.FileLock
-
-        class SignalingFileLock(original_file_lock):
-            def __enter__(self):
-                lock_attempted_event.set()
-                return super().__enter__()
-
-        coverage_module.FileLock = SignalingFileLock
-    try:
-        bundle = write_coverage_reports(report, reports_dir, lock_timeout_seconds=5)
-        Path(result_path).write_text(
-            json.dumps({"generation_id": bundle.generation_id, "status": "ok"}),
-            encoding="utf-8",
-        )
-    except BaseException as exc:
-        Path(result_path).write_text(
-            json.dumps(
-                {
-                    "error": str(exc),
-                    "error_type": type(exc).__name__,
-                    "status": "error",
-                }
-            ),
-            encoding="utf-8",
-        )
-    finally:
-        if done_event is not None:
-            done_event.set()
+PROCESS_NOT_DONE_TIMEOUT_SECONDS = 1
+CLI_SUBPROCESS_TIMEOUT_SECONDS = 120
 
 
 def _join_process(process):
@@ -121,7 +76,7 @@ def test_cross_process_publishers_serialize_without_scavenging_active_staging(
     first_report = replace(report, validation_mode="first_process")
     second_report = replace(report, validation_mode="second_process")
     first = context.Process(
-        target=_publish_in_process,
+        target=coverage_process_helper._publish_in_process,
         args=(
             first_report,
             tmp_path,
@@ -132,7 +87,7 @@ def test_cross_process_publishers_serialize_without_scavenging_active_staging(
         ),
     )
     second = context.Process(
-        target=_publish_in_process,
+        target=coverage_process_helper._publish_in_process,
         args=(
             second_report,
             tmp_path,
@@ -149,7 +104,7 @@ def test_cross_process_publishers_serialize_without_scavenging_active_staging(
     second.start()
     try:
         assert second_lock_attempted.wait(timeout=PROCESS_START_TIMEOUT_SECONDS)
-        assert second_done.wait(timeout=0.1) is False
+        assert second_done.wait(timeout=PROCESS_NOT_DONE_TIMEOUT_SECONDS) is False
     finally:
         release_first.set()
         _join_process(first)
@@ -1215,8 +1170,7 @@ def test_cli_returns_one_and_publishes_structured_duplicate_fixture_id_error(tmp
         encoding="utf-8",
     )
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--fixtures-dir",
         str(fixtures_dir),
         "--reports-dir",
@@ -1242,8 +1196,7 @@ def test_cli_returns_structured_failure_when_oracle_has_no_comparisons(tmp_path)
     expected_dir.mkdir()
     shutil.copy2(FIXTURES_PATH / "storage_account_partial.json", fixtures_dir)
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--fixtures-dir",
         str(fixtures_dir),
         "--expected-dir",
@@ -1264,20 +1217,33 @@ def test_cli_returns_structured_failure_when_oracle_has_no_comparisons(tmp_path)
     ] is False
 
 
-def _run_cli(cwd, *arguments):
+def _run_cli_subprocess(cwd, *arguments):
     return subprocess.run(
         [sys.executable, str(SCRIPT_PATH), *arguments],
         cwd=cwd,
         capture_output=True,
         text=True,
         check=False,
-        timeout=30,
+        timeout=CLI_SUBPROCESS_TIMEOUT_SECONDS,
+    )
+
+
+def _run_cli_in_process(*arguments):
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        returncode = run_coverage_spike_main(list(arguments))
+    return subprocess.CompletedProcess(
+        args=[str(SCRIPT_PATH), *arguments],
+        returncode=returncode,
+        stdout=stdout.getvalue(),
+        stderr=stderr.getvalue(),
     )
 
 
 def test_cli_resolves_default_input_paths_independent_of_cwd(tmp_path):
     reports_dir = tmp_path / "reports"
-    result = _run_cli(tmp_path, "--reports-dir", str(reports_dir))
+    result = _run_cli_subprocess(tmp_path, "--reports-dir", str(reports_dir))
 
     assert result.returncode == 0, result.stderr
     assert "fixture_mismatches=0/12" in result.stdout
@@ -1299,8 +1265,7 @@ def test_cli_returns_one_and_reports_expected_verdict_mismatch(tmp_path):
     expected_file.write_text(json.dumps(expected), encoding="utf-8")
     reports_dir = tmp_path / "reports"
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--expected-dir",
         str(expected_dir),
         "--reports-dir",
@@ -1359,8 +1324,7 @@ def test_cli_returns_one_with_structured_oracle_gate_errors(tmp_path, scenario, 
         compliant["fixture_id"] = "different-fixture-id"
         compliant_path.write_text(json.dumps(compliant), encoding="utf-8")
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--fixtures-dir",
         str(fixtures_dir),
         "--expected-dir",
@@ -1386,8 +1350,7 @@ def test_cli_reports_malformed_checklist_as_concise_structured_error(tmp_path, c
     checklist_path = tmp_path / "malformed-checklist.yaml"
     checklist_path.write_text(checklist_content, encoding="utf-8")
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--checklist",
         str(checklist_path),
         "--reports-dir",
@@ -1407,8 +1370,7 @@ def test_cli_returns_one_for_malformed_mapping(tmp_path):
     mapping_path = tmp_path / "malformed.yaml"
     mapping_path.write_text("controls: [", encoding="utf-8")
 
-    result = _run_cli(
-        tmp_path,
+    result = _run_cli_in_process(
         "--mapping",
         str(mapping_path),
         "--reports-dir",

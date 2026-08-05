@@ -415,3 +415,194 @@ ALTER TABLE result_resource_assessments
     ADD COLUMN IF NOT EXISTS subscription_name VARCHAR(300);
 
 COMMENT ON COLUMN result_resource_assessments.subscription_name IS 'Azure 구독 이름 (표시 이름, 평가 시점 캡처)';
+
+
+-- ============================================================
+-- 7. ENTERPRISE CONTROL DEFINITIONS (immutable/versioned)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS control_definitions (
+    control_key       VARCHAR(200) NOT NULL,
+    control_version   VARCHAR(80)  NOT NULL,
+    definition        JSONB        NOT NULL,
+    definition_hash   CHAR(64)     NOT NULL,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_control_definitions PRIMARY KEY (control_key, control_version),
+    CONSTRAINT chk_control_definition_hash_len CHECK (length(definition_hash) = 64)
+);
+
+CREATE INDEX IF NOT EXISTS idx_control_definitions_created_at
+    ON control_definitions (created_at DESC);
+
+
+-- ============================================================
+-- 8. ENTERPRISE EVALUATION RUNS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS enterprise_evaluation_runs (
+    run_id                 UUID         NOT NULL DEFAULT gen_random_uuid(),
+    tenant_id              VARCHAR(120) NOT NULL,
+    subscription_id        VARCHAR(120) NOT NULL,
+    requested_resource_ids JSONB        NOT NULL DEFAULT '[]',
+    control_keys           JSONB        NOT NULL DEFAULT '[]',
+    run_state              VARCHAR(32)  NOT NULL,
+    reason_code            VARCHAR(120),
+    verdict_counts         JSONB        NOT NULL DEFAULT '{"pass":0,"fail":0,"unknown":0,"not_applicable":0,"exempted":0,"manual_pending":0}',
+    started_at             TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    completed_at           TIMESTAMPTZ,
+
+    CONSTRAINT pk_enterprise_evaluation_runs PRIMARY KEY (run_id),
+    CONSTRAINT chk_enterprise_run_state CHECK (
+        run_state IN ('running', 'completed', 'partial', 'failed')
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_enterprise_runs_subscription_started
+    ON enterprise_evaluation_runs (subscription_id, started_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_enterprise_runs_state
+    ON enterprise_evaluation_runs (run_state, started_at DESC);
+
+
+-- ============================================================
+-- 9. SNAPSHOT RUNS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS snapshot_runs (
+    snapshot_id      UUID         NOT NULL DEFAULT gen_random_uuid(),
+    run_id           UUID         NOT NULL,
+    subscription_id  VARCHAR(120) NOT NULL,
+    snapshot_payload JSONB        NOT NULL DEFAULT '{}',
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_snapshot_runs PRIMARY KEY (snapshot_id),
+    CONSTRAINT fk_snapshot_runs_run FOREIGN KEY (run_id)
+        REFERENCES enterprise_evaluation_runs (run_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_snapshot_runs_run
+    ON snapshot_runs (run_id, created_at DESC);
+
+
+-- ============================================================
+-- 10. EVIDENCE RECORDS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS evidence_records (
+    evidence_id       UUID         NOT NULL DEFAULT gen_random_uuid(),
+    run_id            UUID         NOT NULL,
+    resource_id       TEXT         NOT NULL,
+    source_kind       VARCHAR(80)  NOT NULL,
+    source_reference  VARCHAR(300) NOT NULL,
+    source_version    VARCHAR(120) NOT NULL,
+    observed_at       TIMESTAMPTZ  NOT NULL,
+    content_hash      CHAR(64)     NOT NULL,
+    payload           JSONB        NOT NULL,
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_evidence_records PRIMARY KEY (evidence_id),
+    CONSTRAINT fk_evidence_records_run FOREIGN KEY (run_id)
+        REFERENCES enterprise_evaluation_runs (run_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_evidence_content_hash_len CHECK (length(content_hash) = 64),
+    CONSTRAINT uq_evidence_per_run UNIQUE (run_id, resource_id, source_kind, source_reference, source_version, content_hash)
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_records_run_resource
+    ON evidence_records (run_id, resource_id);
+
+CREATE INDEX IF NOT EXISTS idx_evidence_records_hash_provenance
+    ON evidence_records (content_hash, source_kind, source_reference, source_version, observed_at);
+
+
+-- ============================================================
+-- 11. ENTERPRISE COLLECTION FAILURES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS enterprise_collection_failures (
+    failure_id        UUID          NOT NULL DEFAULT gen_random_uuid(),
+    run_id            UUID          NOT NULL,
+    source_kind       VARCHAR(80)   NOT NULL,
+    source_reference  VARCHAR(300)  NOT NULL,
+    reason_code       VARCHAR(120)  NOT NULL,
+    status_code       INT,
+    retry_after       DOUBLE PRECISION,
+    detail            TEXT          NOT NULL DEFAULT '',
+    created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_enterprise_collection_failures PRIMARY KEY (failure_id),
+    CONSTRAINT fk_enterprise_collection_failures_run FOREIGN KEY (run_id)
+        REFERENCES enterprise_evaluation_runs (run_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_enterprise_failures_run
+    ON enterprise_collection_failures (run_id, created_at DESC);
+
+
+-- ============================================================
+-- 12. ENTERPRISE VERDICTS/FINDINGS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS enterprise_verdicts (
+    finding_id       UUID         NOT NULL DEFAULT gen_random_uuid(),
+    run_id           UUID         NOT NULL,
+    resource_id      TEXT         NOT NULL,
+    control_key      VARCHAR(200) NOT NULL,
+    verdict_state    VARCHAR(32)  NOT NULL,
+    reason_code      VARCHAR(120) NOT NULL,
+    evidence_hashes  JSONB        NOT NULL DEFAULT '[]',
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_enterprise_verdicts PRIMARY KEY (finding_id),
+    CONSTRAINT fk_enterprise_verdicts_run FOREIGN KEY (run_id)
+        REFERENCES enterprise_evaluation_runs (run_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_enterprise_verdict_state CHECK (
+        verdict_state IN ('pass', 'fail', 'unknown', 'not_applicable', 'exempted', 'manual_pending')
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_enterprise_verdicts_run_resource_control
+    ON enterprise_verdicts (run_id, resource_id, control_key, verdict_state);
+
+CREATE INDEX IF NOT EXISTS idx_enterprise_verdicts_state
+    ON enterprise_verdicts (verdict_state, created_at DESC);
+
+
+-- ============================================================
+-- 13. REMEDIATION RUNS (Task 7 placeholder)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS remediation_runs (
+    remediation_run_id UUID         NOT NULL DEFAULT gen_random_uuid(),
+    run_id             UUID,
+    subscription_id    VARCHAR(120) NOT NULL,
+    status             VARCHAR(40)  NOT NULL DEFAULT 'pending',
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_remediation_runs PRIMARY KEY (remediation_run_id),
+    CONSTRAINT fk_remediation_runs_run FOREIGN KEY (run_id)
+        REFERENCES enterprise_evaluation_runs (run_id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_remediation_runs_subscription
+    ON remediation_runs (subscription_id, created_at DESC);
+
+
+-- ============================================================
+-- 14. REMEDIATION ARTIFACTS (Task 7 placeholder)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS remediation_artifacts (
+    artifact_id          UUID         NOT NULL DEFAULT gen_random_uuid(),
+    remediation_run_id   UUID         NOT NULL,
+    artifact_type        VARCHAR(60)  NOT NULL,
+    content_hash         CHAR(64)     NOT NULL,
+    content              TEXT         NOT NULL DEFAULT '',
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT pk_remediation_artifacts PRIMARY KEY (artifact_id),
+    CONSTRAINT fk_remediation_artifacts_run FOREIGN KEY (remediation_run_id)
+        REFERENCES remediation_runs (remediation_run_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_remediation_artifact_hash_len CHECK (length(content_hash) = 64)
+);
+
+CREATE INDEX IF NOT EXISTS idx_remediation_artifacts_run
+    ON remediation_artifacts (remediation_run_id, created_at DESC);
