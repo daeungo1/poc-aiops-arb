@@ -42,7 +42,7 @@
     {
       "source_kind": "arg",
       "source_reference": "arg.storage_account.private_endpoints",
-      "source_version": "query-sha256-synthetic-v1",
+      "source_version": "api-version:2022-10-01;query-sha256:935f008945f1eb4da6130786aa666345e48c290396b045f623b4500f89579668",
       "resource_id": "synthetic-storage-account-compliant",
       "status": "complete",
       "payload": {
@@ -57,7 +57,7 @@
     {
       "source_kind": "azure_policy",
       "source_reference": "synthetic.azure_policy.storage.secure_transfer",
-      "source_version": "synthetic-v1",
+      "source_version": "2019-10-01",
       "resource_id": "synthetic-storage-account-compliant",
       "status": "complete",
       "payload": {
@@ -68,7 +68,7 @@
     {
       "source_kind": "defender",
       "source_reference": "synthetic.defender.storage.public_network",
-      "source_version": "synthetic-v1",
+      "source_version": "2020-01-01",
       "resource_id": "synthetic-storage-account-compliant",
       "status": "complete",
       "payload": {
@@ -79,7 +79,7 @@
     {
       "source_kind": "advisor",
       "source_reference": "synthetic.advisor.storage.redundancy",
-      "source_version": "synthetic-v1",
+      "source_version": "2025-01-01",
       "resource_id": "synthetic-storage-account-compliant",
       "status": "complete",
       "payload": {
@@ -90,7 +90,7 @@
     {
       "source_kind": "aprl",
       "source_reference": "synthetic.aprl.storage.private_endpoint",
-      "source_version": "synthetic-v1",
+      "source_version": "api-version:2022-10-01;query-sha256:1f48146fbb79425920f266f0f2e0fcc31b8224a8d35f7af6bee99aa32b4cf2b6",
       "resource_id": "synthetic-storage-account-compliant",
       "status": "complete",
       "payload": {

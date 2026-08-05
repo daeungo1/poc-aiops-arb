@@ -144,6 +144,11 @@ def _primary_source(**overrides):
         "source_kind": "arm",
         "reference": "arm.storage_account.resource",
         "version": "2023-05-01",
+        "adapter_config": {
+            "adapter": "storage_account",
+            "api_version": "2023-05-01",
+            "resource_detail": "account",
+        },
         "role": SourceRole.PRIMARY,
         "required": True,
     }
@@ -216,6 +221,27 @@ def test_evidence_source_rejects_invalid_role_and_required_flag():
         _primary_source(required=1)
 
 
+def test_evidence_source_requires_non_empty_adapter_config_mapping():
+    with pytest.raises(ValueError, match="adapter_config"):
+        _primary_source(adapter_config={})
+
+    with pytest.raises(ValueError, match="adapter_config"):
+        _primary_source(adapter_config=None)
+
+
+def test_evidence_source_adapter_config_is_recursively_immutable():
+    source = _primary_source(
+        adapter_config={
+            "adapter": "storage_account",
+            "api_version": "2023-05-01",
+            "nested": {"projection": ["resource_id", "resource_type"]},
+        }
+    )
+
+    with pytest.raises(TypeError):
+        source.adapter_config["nested"]["projection"][0] = "changed"
+
+
 def test_corroborating_source_requires_normalized_verdict_selector():
     with pytest.raises(ValueError, match="verdict_selector"):
         _primary_source(role=SourceRole.CORROBORATING, required=False)
@@ -258,6 +284,11 @@ def test_control_definition_stores_sources_as_immutable_tuple():
             source_kind="azure_policy",
             reference="synthetic-policy-definition-storage-secure-transfer",
             version="synthetic-v1",
+            adapter_config={
+                "adapter": "azure_policy",
+                "api_version": "2019-10-01",
+                "policy_definition_id": "synthetic-policy-definition-storage-secure-transfer",
+            },
             role=SourceRole.CORROBORATING,
             required=False,
             verdict_selector="verdict.status",

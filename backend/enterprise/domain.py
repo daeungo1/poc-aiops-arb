@@ -109,6 +109,7 @@ class EvidenceSource:
     source_kind: str
     reference: str
     version: str
+    adapter_config: Mapping[str, Any] = field(compare=False, hash=False)
     role: SourceRole
     required: bool
     verdict_selector: str | None = None
@@ -117,6 +118,9 @@ class EvidenceSource:
         _require_text("source_kind", self.source_kind)
         _require_text("reference", self.reference)
         _require_text("version", self.version)
+        if not isinstance(self.adapter_config, Mapping) or not self.adapter_config:
+            raise ValueError("adapter_config must be a non-empty mapping")
+        object.__setattr__(self, "adapter_config", _freeze(self.adapter_config))
         if not isinstance(self.role, SourceRole):
             raise ValueError("role must be a SourceRole")
         if not isinstance(self.required, bool):

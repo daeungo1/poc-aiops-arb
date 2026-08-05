@@ -104,6 +104,37 @@ def test_mapping_uses_canonical_sources_array_without_singular_source_fields():
         assert {"source_kind", "source_reference", "source_version"}.isdisjoint(control)
 
 
+def test_every_source_declares_non_empty_adapter_config():
+    registry = ControlRegistry.load(CHECKLIST_PATH, MAPPING_PATH)
+
+    assert all(source.adapter_config for control in registry.controls.values() for source in control.sources)
+
+
+def test_registry_rejects_source_without_adapter_config(tmp_path):
+    document = _load_mapping_document()
+    document["controls"][0]["sources"][0].pop("adapter_config", None)
+
+    with pytest.raises(ValueError, match="adapter_config"):
+        ControlRegistry.load(CHECKLIST_PATH, _write_mapping(tmp_path, document))
+
+
+def test_registry_rejects_source_adapter_config_unknown_keys(tmp_path):
+    document = _load_mapping_document()
+    document["controls"][0]["sources"][0]["adapter_config"]["unexpected"] = "value"
+
+    with pytest.raises(ValueError, match="adapter_config"):
+        ControlRegistry.load(CHECKLIST_PATH, _write_mapping(tmp_path, document))
+
+
+def test_registry_rejects_arg_source_when_query_hash_and_source_version_do_not_match(tmp_path):
+    document = _load_mapping_document()
+    arg_source = document["controls"][-1]["sources"][0]
+    arg_source["adapter_config"]["query"] = "Resources | project id, type"
+
+    with pytest.raises(ValueError, match="query"):
+        ControlRegistry.load(CHECKLIST_PATH, _write_mapping(tmp_path, document))
+
+
 def test_sample_maps_four_synthetic_managed_corroborating_source_kinds():
     registry = ControlRegistry.load(CHECKLIST_PATH, MAPPING_PATH)
     managed_sources = {
@@ -115,7 +146,10 @@ def test_sample_maps_four_synthetic_managed_corroborating_source_kinds():
 
     assert {"azure_policy", "defender", "advisor", "aprl"} <= set(managed_sources)
     assert all("synthetic" in source.reference for source in managed_sources.values())
-    assert all("synthetic" in source.version for source in managed_sources.values())
+    assert managed_sources["azure_policy"].version == "2019-10-01"
+    assert managed_sources["defender"].version == "2020-01-01"
+    assert managed_sources["advisor"].version == "2025-01-01"
+    assert managed_sources["aprl"].version.startswith("api-version:2022-10-01;query-sha256:")
     managed_controls = [control for control in registry.controls.values() if len(control.sources) > 1]
     assert len(managed_controls) >= 4
     assert all(control.evaluator_kind is EvaluatorKind.MANAGED for control in managed_controls)

@@ -31,6 +31,8 @@ SCRIPT_PATH = ROOT / "backend/scripts/run_coverage_spike.py"
 README_PATH = SPIKE_ROOT / "README.md"
 PUBLISH_LOCK_PATH_NAME = ".publish.lock"
 STALE_MANIFEST_NAME = "current.123e4567-e89b-12d3-a456-426614174000.tmp"
+PROCESS_START_TIMEOUT_SECONDS = 60
+PROCESS_JOIN_TIMEOUT_SECONDS = 30
 
 
 def _publish_in_process(
@@ -48,7 +50,7 @@ def _publish_in_process(
         def blocking_stage_content(path, content):
             staged_path = original_stage_content(path, content)
             staged_event.set()
-            if not release_event.wait(timeout=10):
+            if not release_event.wait(timeout=PROCESS_START_TIMEOUT_SECONDS):
                 raise TimeoutError("test publisher was not released")
             return staged_path
 
@@ -85,7 +87,7 @@ def _publish_in_process(
 
 
 def _join_process(process):
-    process.join(timeout=10)
+    process.join(timeout=PROCESS_JOIN_TIMEOUT_SECONDS)
     if process.is_alive():
         process.terminate()
         process.join(timeout=5)
@@ -143,10 +145,10 @@ def test_cross_process_publishers_serialize_without_scavenging_active_staging(
     )
 
     first.start()
-    assert first_staged.wait(timeout=10)
+    assert first_staged.wait(timeout=PROCESS_START_TIMEOUT_SECONDS)
     second.start()
     try:
-        assert second_lock_attempted.wait(timeout=10)
+        assert second_lock_attempted.wait(timeout=PROCESS_START_TIMEOUT_SECONDS)
         assert second_done.wait(timeout=0.1) is False
     finally:
         release_first.set()

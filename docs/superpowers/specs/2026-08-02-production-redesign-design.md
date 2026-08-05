@@ -7,7 +7,10 @@
 작업은 다음 두 branch로 분리한다.
 
 - `prod-redesign/coverage-spike`: 샘플 corpus, adapter 실험, coverage 보고서, 목표 계약을 완성한다.
-- `prod-redesign`: 실험 결과가 진행 게이트를 통과한 후 생성하고 프로덕션 구현을 수행한다.
+- `prod-redesign/implementation`: 실험 결과가 진행 게이트를 통과한 후 생성하고 프로덕션 구현을 수행한다.
+
+Git refs는 `prod-redesign/coverage-spike`가 존재할 때 prefix branch인 `prod-redesign`와 공존할 수
+없으므로 implementation branch도 동일한 namespace 아래에 둔다.
 
 ## 2. 설계 원칙
 
@@ -138,7 +141,7 @@ Phase 1의 기본 검증은 합성 fixture로 수행한다. 실제 Azure 호출�
 
 ## 8. Phase 2 진입 게이트
 
-다음 조건을 모두 충족한 후 `prod-redesign` branch를 생성한다.
+다음 조건을 모두 충족한 후 `prod-redesign/implementation` branch를 생성한다.
 
 1. 샘플 control 전체에 evaluator kind와 미매핑 이유가 기록돼 있다.
 2. fixture 기반 expected verdict 테스트가 통과한다.

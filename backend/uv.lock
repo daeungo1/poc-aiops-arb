@@ -176,6 +176,7 @@ name = "aiops-resource-assessment"
 version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "azure-identity" },
     { name = "azure-mgmt-resource" },
     { name = "azure-mgmt-resourcegraph" },
@@ -191,7 +192,6 @@ dependencies = [
 chat = [
     { name = "agent-framework-ag-ui" },
     { name = "agent-framework-core" },
-    { name = "aiohttp" },
     { name = "fastapi" },
     { name = "msal" },
     { name = "uvicorn", extra = ["standard"] },
@@ -206,7 +206,7 @@ dev = [
 requires-dist = [
     { name = "agent-framework-ag-ui", marker = "extra == 'chat'", specifier = ">=1.0.0b260225" },
     { name = "agent-framework-core", marker = "extra == 'chat'", specifier = ">=1.0.0rc2" },
-    { name = "aiohttp", marker = "extra == 'chat'", specifier = ">=3.9.0" },
+    { name = "aiohttp", specifier = ">=3.9.0" },
     { name = "azure-identity", specifier = ">=1.15.0" },
     { name = "azure-mgmt-resource", specifier = ">=23.0.0" },
     { name = "azure-mgmt-resourcegraph", specifier = ">=8.0.0" },

@@ -63,7 +63,7 @@ class DeterministicEvaluator:
 
         expected_resource_type = control.resource_type.casefold()
         supported_resource_ids = {
-            record.resource_id
+            record.resource_id.casefold()
             for record in by_source[primary_source]
             if self._resource_type(record) == expected_resource_type
         }
@@ -80,7 +80,7 @@ class DeterministicEvaluator:
             record
             for source in control.sources
             for record in by_source[source]
-            if record.resource_id in supported_resource_ids
+            if record.resource_id.casefold() in supported_resource_ids
         )
         target_resource_types = tuple(self._resource_type(record) for record in target_records)
         if any(resource_type is None for resource_type in target_resource_types):
@@ -112,7 +112,7 @@ class DeterministicEvaluator:
         if any(record.status is EvidenceStatus.PARTIAL for record in applicable):
             return self._verdict(control, "evidence_partial", applicable)
 
-        resource_ids = {record.resource_id for record in applicable}
+        resource_ids = {record.resource_id.casefold() for record in applicable}
         if len(resource_ids) != 1:
             return self._verdict(control, "evidence_scope_conflict", applicable)
 

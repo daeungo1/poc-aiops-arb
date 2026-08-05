@@ -163,9 +163,12 @@ Expected: all tests pass, `current.json` resolves to one hash-validated immutabl
 
 - [ ] **Step 5: Create the implementation branch**
 
-Run: `& 'C:\Program Files\Git\cmd\git.exe' switch -c prod-redesign`
+Run: `& 'C:\Program Files\Git\cmd\git.exe' switch -c prod-redesign/implementation`
 
-Expected: current branch is `prod-redesign`; uncommitted Phase 1 artifacts remain in the working tree.
+Expected: current branch is `prod-redesign/implementation`; uncommitted Phase 1 artifacts remain in the working tree.
+
+Note: Git refs cannot create the prefix branch `prod-redesign` while
+`prod-redesign/coverage-spike` exists, so the implementation branch uses the same namespace.
 
 ---
 

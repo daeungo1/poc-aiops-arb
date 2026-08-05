@@ -9,11 +9,21 @@ controls:
       - source_kind: arm
         reference: arm.storage_account.resource
         version: "2023-05-01"
+        adapter_config:
+          adapter: storage_account
+          api_version: "2023-05-01"
+          resource_detail: account
         role: primary
         required: true
       - source_kind: azure_policy
         reference: synthetic.azure_policy.storage.secure_transfer
-        version: synthetic-v1
+        version: "2019-10-01"
+        adapter_config:
+          adapter: azure_policy
+          api_version: "2019-10-01"
+          policy_definition_id: synthetic-policy-secure-transfer
+          assignment_id: synthetic-policy-assignment-secure-transfer
+          definition_reference_id: secure-transfer
         role: corroborating
         required: false
         verdict_selector: verdict.status
@@ -67,6 +77,10 @@ controls:
       - source_kind: arm
         reference: arm.storage_account.resource
         version: "2023-05-01"
+        adapter_config:
+          adapter: storage_account
+          api_version: "2023-05-01"
+          resource_detail: account
         role: primary
         required: true
     assertion:
@@ -100,11 +114,20 @@ controls:
       - source_kind: arm
         reference: arm.storage_account.resource
         version: "2023-05-01"
+        adapter_config:
+          adapter: storage_account
+          api_version: "2023-05-01"
+          resource_detail: account
         role: primary
         required: true
       - source_kind: defender
         reference: synthetic.defender.storage.public_network
-        version: synthetic-v1
+        version: "2020-01-01"
+        adapter_config:
+          adapter: defender
+          api_version: "2020-01-01"
+          assessment_names:
+            - synthetic-defender-public-network
         role: corroborating
         required: false
         verdict_selector: verdict.status
@@ -142,6 +165,10 @@ controls:
       - source_kind: storage_service
         reference: arm.storage_account.blob_service
         version: "2023-05-01"
+        adapter_config:
+          adapter: storage_account
+          api_version: "2023-05-01"
+          resource_detail: blob_service
         role: primary
         required: true
     assertion:
@@ -188,11 +215,19 @@ controls:
       - source_kind: arm
         reference: arm.storage_account.resource
         version: "2023-05-01"
+        adapter_config:
+          adapter: storage_account
+          api_version: "2023-05-01"
+          resource_detail: account
         role: primary
         required: true
       - source_kind: advisor
         reference: synthetic.advisor.storage.redundancy
-        version: synthetic-v1
+        version: "2025-01-01"
+        adapter_config:
+          adapter: advisor
+          api_version: "2025-01-01"
+          recommendation_type_id: synthetic-advisor-redundancy
         role: corroborating
         required: false
         verdict_selector: verdict.status
@@ -243,12 +278,33 @@ controls:
     sources:
       - source_kind: arg
         reference: arg.storage_account.private_endpoints
-        version: query-sha256-synthetic-v1
+        version: api-version:2022-10-01;query-sha256:935f008945f1eb4da6130786aa666345e48c290396b045f623b4500f89579668
+        adapter_config:
+          adapter: resource_graph
+          api_version: "2022-10-01"
+          query: Resources | where type =~ 'microsoft.storage/storageaccounts' | project resourceId=id, resourceType=type, relationships=properties.privateEndpointConnections
+          projection:
+            resource_id: resourceId
+            resource_type: resourceType
         role: primary
         required: true
       - source_kind: aprl
         reference: synthetic.aprl.storage.private_endpoint
-        version: synthetic-v1
+        version: api-version:2022-10-01;query-sha256:1f48146fbb79425920f266f0f2e0fcc31b8224a8d35f7af6bee99aa32b4cf2b6
+        adapter_config:
+          adapter: aprl
+          api_version: "2022-10-01"
+          query: Resources | where type =~ 'microsoft.storage/storageaccounts' | project resourceId=id, resourceType=type, status=iif(array_length(properties.privateEndpointConnections) > 0, 'pass', 'fail')
+          projection:
+            resource_id: resourceId
+            resource_type: resourceType
+          status_field: status
+          pass_status_values:
+            - pass
+            - passed
+          fail_status_values:
+            - fail
+            - failed
         role: corroborating
         required: false
         verdict_selector: verdict.status
