@@ -166,6 +166,22 @@ def get_checklist_loader():
         return _checklist_loader_singleton
 
 
+def _enterprise_registry_path(env_name: str, kind: str) -> Path:
+    """control registry YAML 경로. 컨테이너 이미지에는 backend/ 만 복사되므로 env·이미지 경로도 함께 탐색."""
+    override = (os.environ.get(env_name) or "").strip()
+    if override:
+        return Path(override)
+    filename = "azure_storage_production_readiness.yaml"
+    candidates = (
+        PROJECT_DIR.parent / "experiments" / "coverage_spike" / kind / filename,
+        PROJECT_DIR / "registry" / kind / filename,
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
 def _enterprise_service_provider(credential: TokenCredential) -> "EnterpriseAssessmentService":
     from enterprise.service import EnterpriseAssessmentService
 
@@ -177,8 +193,12 @@ def _enterprise_service_provider(credential: TokenCredential) -> "EnterpriseAsse
         if _enterprise_registry_singleton is None:
             from enterprise.registry import ControlRegistry
 
-            checklist_path = PROJECT_DIR.parent / "experiments" / "coverage_spike" / "checklists" / "azure_storage_production_readiness.yaml"
-            mapping_path = PROJECT_DIR.parent / "experiments" / "coverage_spike" / "mappings" / "azure_storage_production_readiness.yaml"
+            checklist_path = _enterprise_registry_path(
+                "ENTERPRISE_CONTROL_CHECKLIST_PATH", "checklists"
+            )
+            mapping_path = _enterprise_registry_path(
+                "ENTERPRISE_CONTROL_MAPPING_PATH", "mappings"
+            )
             _enterprise_registry_singleton = ControlRegistry.load(checklist_path, mapping_path)
 
         if _enterprise_repository_singleton is None:

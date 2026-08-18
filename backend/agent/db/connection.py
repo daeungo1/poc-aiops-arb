@@ -53,6 +53,9 @@ class _PooledConn:
     def __getattr__(self, name: str) -> Any:
         return getattr(object.__getattribute__(self, "_conn"), name)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        setattr(object.__getattribute__(self, "_conn"), name, value)
+
     def close(self) -> None:
         object.__getattribute__(self, "_pool").putconn(
             object.__getattribute__(self, "_conn")

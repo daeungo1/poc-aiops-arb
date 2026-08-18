@@ -22,6 +22,10 @@ RUN uv sync --frozen --no-dev --extra chat
 
 COPY backend/ ./
 
+# v2 control registry(체크리스트 + source mapping) — /api/v2 가 이 경로를 탐색한다
+COPY experiments/coverage_spike/checklists/ ./registry/checklists/
+COPY experiments/coverage_spike/mappings/ ./registry/mappings/
+
 ENV PATH="/app/.venv/bin:$PATH" \
     PORT=5100
 

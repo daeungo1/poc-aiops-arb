@@ -31,6 +31,7 @@ frontend/dist
 # 로컬 데이터·산출물 (backend/ 하위 포함)
 **/results
 **/checklists
+!experiments/coverage_spike/checklists
 **/terraform_output
 .terraform
 *.tfstate
