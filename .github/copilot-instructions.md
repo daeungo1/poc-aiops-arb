@@ -7,11 +7,20 @@
 
 ## 아키텍처 한눈에 보기
 
+![애플리케이션 아키텍처](architecture.svg)
+
+<details><summary>배포 토폴로지</summary>
+
 ![배포 아키텍처](architecture.png)
 
 <!-- 편집 소스: architecture.excalidraw (https://excalidraw.com 에 드래그&드롭 또는 Excalidraw VS Code 확장으로 열기) -->
 
-핵심 흐름: **Azure 리소스 수집 → 체크리스트(LLM) 진단 → 리포트(MD/JSON/HTML) → Terraform 개선코드 생성**
+</details>
+
+핵심 흐름: **Azure 리소스 수집 → 체크리스트 진단 → 리포트(MD/JSON/HTML) → Terraform 개선코드 생성**
+
+평가 경로는 두 갈래입니다. **v1**(`backend/agent/`, `/api/*`)은 LLM이 판정하고, **v2**(`backend/enterprise/`, `/api/v2/*`)는
+관리형 원천에서 수집한 evidence로 결정론 판정합니다. v2는 `ENTERPRISE_ASSESSMENT_ENABLED` 가 켜진 경우에만 등록됩니다.
 
 ## 기술 스택
 
@@ -47,6 +56,16 @@
 │   ├── chat/                      # AG-UI 챗봇
 │   │   ├── agent.py               # SYSTEM_INSTRUCTIONS, create_agent(), ALL_TOOLS
 │   │   └── tools/                 # 도구: assessment, search, terraform, azure_session
+│   ├── enterprise/                # v2 결정론 평가 (Issue #1 §7-① 대응)
+│   │   ├── domain.py              # VerdictState, EvidenceRecord(SHA-256), ControlDefinition
+│   │   ├── registry.py            # control 체크리스트 + evidence source mapping YAML 로드
+│   │   ├── adapters/              # arm, arg, aprl, policy, defender, advisor (aiohttp 비동기)
+│   │   ├── evaluator.py           # 결정론 판정 — LLM 미개입
+│   │   ├── service.py             # 수집 → 평가 → 영속화 오케스트레이션
+│   │   ├── repository.py / postgres_repository.py  # InMemory / PostgreSQL 영속화
+│   │   ├── coverage.py            # coverage 리포트 immutable publish/read
+│   │   └── api.py                 # /api/v2 라우터 (ENTERPRISE_ASSESSMENT_ENABLED 게이트)
+│   ├── tests/enterprise/          # pytest — domain·registry·evaluator·adapters·service·api·coverage
 │   ├── scripts/01_schema.sql      # PostgreSQL 통합 스키마
 │   ├── agui_server.py             # FastAPI 앱: auth · Azure REST · 체크리스트 · 평가 · Terraform · AG-UI
 │   ├── main.py                    # 진입점: CLI 평가(-s) 또는 uvicorn 서버(기본)
@@ -62,6 +81,8 @@
 │   ├── main.tf / providers.tf / variables.tf / outputs.tf / terraform.tfvars
 │   └── modules/                   # network, acr, ai_foundry, app_service, database,
 │                                  # private_endpoints, appgw, firewall
+├── experiments/coverage_spike/    # Storage control 스파이크 (checklists · mappings · fixtures · reports)
+├── docs/superpowers/              # 프로덕션 재설계 스펙·플랜
 ├── docker/                        # Dockerfile.backend(.local), Dockerfile.frontend, nginx.conf.template
 └── README.md
 ```
@@ -78,6 +99,12 @@ cd backend && uv run python main.py
 # CLI 일회성 평가 (구독 ID 주면 서버 대신 CLI 모드)
 cd backend && uv run python main.py -s <SUBSCRIPTION_ID> [-g <RG>] [-o all]
 
+# 테스트 (enterprise 결정론 평가)
+cd backend && uv run pytest tests/enterprise -q
+
+# coverage spike gate (저장소 루트)
+uv run --project backend python backend/scripts/run_coverage_spike.py
+
 # 프론트엔드
 cd frontend && npm install && npm run build   # (dev: npm run dev)
 
@@ -93,9 +120,10 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
 | 인증 | `GET /api/auth/login` (→Entra 302), `GET /api/getAToken` (콜백), `POST /api/auth/logout`, `GET /api/auth/session` |
 | Azure 세션 | `GET /api/azure/subscriptions` (OBO∩UAMI 교집합), `GET /api/azure/session-bootstrap`, `GET /api/azure/resources` |
 | 대시보드 | `GET /api/dashboard/stats` (DB 집계 · subscriptions 필드는 "평가결과 있는 구독"만) |
-| 평가 | `POST /api/assessments/run`, `GET /api/assessments`, `GET /api/assessments/{path}` |
+| 평가 (v1) | `POST /api/assessments/run`, `GET /api/assessments`, `GET /api/assessments/{path}` |
+| 평가 (v2) | `GET /api/v2/controls`, `POST /api/v2/assessments`, `GET /api/v2/assessments/{run_id}`, `GET /api/v2/findings/{finding_id}` |
 | 체크리스트 | `GET/POST /api/checklists`, `…/upload`(YAML), `GET/PUT/DELETE /api/checklists/{name}`, `…/raw` |
-| Terraform | `GET /api/terraform`, `POST /api/terraform/generate`, `POST /api/terraform/sync` |
+| Terraform | `GET /api/terraform`, `POST /api/terraform/generate`, `GET /api/terraform/{sub}/{ts}/{file}[/raw]`, `GET /api/downloads/...` |
 | 채팅 | Agent Framework: `POST /api/chat` (AG-UI) |
 
 ## 아키텍처·구현 규칙 (중요)
@@ -114,6 +142,12 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
 - **Terraform 생성**: strict JSON Schema로 provider/variables/main/outputs 4개 HCL 필드를 받음
   (`terraform_generator.py`의 `TERRAFORM_RESPONSE_JSON_SCHEMA`, 파일 순서 고정).
 - **DB 모드 전환**: `DB_HOST`가 설정되면 DB 모드, 비면 파일 기반. 스키마는 기동 시 `db_init`이 적용.
+- **v2 결정론 평가 제약**(`backend/enterprise/`): 판정은 `evaluator.py`만 생성하며 **LLM은 verdict를 바꿀 수 없음**.
+  증거 결손·부분·충돌·스로틀링·권한부족은 `fail`이 아니라 **`unknown`**. verdict는 6상태로 고정
+  (`pass`/`fail`/`unknown`/`not_applicable`/`exempted`/`manual_pending`). 모든 evidence는 source kind/reference/version·
+  관찰 시각·SHA-256 content hash를 보유. 신규 Python 동작은 TDD(실패 테스트 → 최소 구현 → 재실행)로 추가.
+- **롤백 경로 보존**: `/api/v2`는 `ENTERPRISE_ASSESSMENT_ENABLED`가 켜진 경우에만 라우터를 등록. 기존 `/api` 동작과
+  테이블은 그대로 유지할 것.
 
 ## 배포 관련 주의 (거버넌스가 엄격한 구독)
 
@@ -129,3 +163,17 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
 - 코드 주석·문서는 한국어, 기술 용어·식별자·리소스 이름은 영어 그대로 유지.
 - 챗봇 응답은 한국어로, 60% 미만 점수 리소스 강조, 심각도(high>medium>low) 순 정렬 (`chat/agent.py` 참고).
 - 비밀값은 커밋 금지: `.env`, `*.pfx/.p12`, `*.tfstate`, `*.auto.tfvars`는 `.gitignore` 처리됨.
+
+## Issue #1 기반 업데이트
+
+[Issue #1 — 설계·기능 원점 정리](https://github.com/daeungo1/poc-aiops-arb/issues/1) §7 논의 지점 기준 진행 상황.
+
+| 논의 지점 | 상태 |
+|---|---|
+| ① 판정 신뢰성 — 결정론 evaluator | ✅ `backend/enterprise/` + `/api/v2` |
+| ② 체크리스트 corpus 원천 매핑 | 🟡 Storage control 스파이크 범위 |
+| ③ Terraform 산출물 검증(validate·scan) | ⬜ `remediation_*` 스키마만 선반영 |
+| ④ 챗봇 evidence 조회·해석 도구 | ⬜ 미구현 (현재는 v1 런처) |
+| ⑤ 정확도 측정 기준 | 🟡 coverage gate + `backend/tests/enterprise/` |
+
+상세 플랜: [docs/superpowers/plans/2026-08-02-production-redesign.md](../docs/superpowers/plans/2026-08-02-production-redesign.md)
