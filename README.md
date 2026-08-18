@@ -19,6 +19,31 @@ Azure Architecture Review Board 체크리스트를 기준으로 Azure 리소스�
 3. **리포트·산출물**: Markdown / JSON / HTML 리포트, Terraform 초안 생성 및 다운로드  
 4. **웹 UI**: Entra ID SSO, FastAPI REST + AG-UI 채팅(`POST /chat`), React 대시보드·보드 화면
 
+## 아키텍처
+
+계층 구조와 두 갈래 평가 경로(v1 LLM 평가 · v2 결정론 평가)를 나타냅니다.
+
+![AIOps Resource Assessment 애플리케이션 아키텍처](.github/architecture.svg)
+
+| 계층 | 구성 |
+|------|------|
+| 클라이언트 | React 18 + Vite SPA — `App.tsx` 라우팅, Context Provider, AG-UI 챗 사이드바 |
+| 엣지 | nginx 컨테이너 — SPA 정적 서빙 + `/api/*` 리버스 프록시(동일 오리진) |
+| API | FastAPI(`backend/agui_server.py`) — 위임 토큰 미들웨어, Azure 세션 미들웨어, `/api` · `/api/v2` · `/api/chat` |
+| 도메인 | `backend/agent/`(v1 LLM 평가) · `backend/enterprise/`(v2 결정론 평가) · `backend/chat/`(AG-UI 도구) |
+| 데이터 | PostgreSQL 16(v1·v2 테이블) + 로컬 리포트·Terraform 산출물 |
+| 외부 | Entra ID, ARM·Resource Graph, Policy·Defender·Advisor·APRL, Azure AI Foundry |
+
+**인증 경계**: 웹 요청은 `DelegatedUserTokenMiddleware`가 경로별로 사용자 위임 토큰(OBO)을 주입하고,
+그 외 경로와 **모든 Foundry LLM 호출은 백엔드 관리 ID(SAMI/UAMI)** 로 수행합니다.
+
+**v2 결정론 평가 원칙**: 판정은 `enterprise/evaluator.py`만 생성하며 LLM은 verdict를 바꿀 수 없습니다.
+증거 결손·충돌·스로틀링은 `fail`이 아니라 `unknown`으로 확정되고, 모든 evidence는 source kind/reference/version·
+관찰 시각·SHA-256 content hash를 함께 저장합니다. `ENTERPRISE_ASSESSMENT_ENABLED`가 켜진 경우에만 `/api/v2`
+라우터가 등록되며, 기존 `/api` 경로는 그대로 유지됩니다.
+
+배포 토폴로지(App Service for Containers · Private Endpoint 전용)는 [.github/architecture.png](.github/architecture.png)를 참고합니다.
+
 ## 기술 스택
 
 | 구분 | 내용 |
