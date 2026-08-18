@@ -44,6 +44,10 @@ React SPA + 우측 챗 사이드바. 4개 보드 + 로그인으로 구성됩니�
 
 `ENTERPRISE_ASSESSMENT_ENABLED`가 꺼져 있으면 `/api/v2` 라우터를 등록하지 않으므로, 기존 `/api` 동작은 영향을 받지 않습니다(롤백 경로 보존).
 
+v2에서 LLM은 **근거 설명 · 후속 조사 · 관리형 원천으로 매핑할 수 없는 `agent_assisted` 항목 · remediation 초안**에만 쓰입니다.
+control은 `evaluator_kind`(`managed` · `custom` · `agent_assisted` · `manual`)로 판정 방식을 명시하며,
+coverage 리포트는 이 분포를 기계 판정(machine verifiable) 비율로 집계합니다.
+
 ## 아키텍처
 
 Azure 리소스 기준의 배포 구성과 두 갈래 평가 경로(v1 LLM 평가 · v2 결정론 평가)입니다.
@@ -103,7 +107,9 @@ categories:
 - `applicable_resource_types`가 비어 있으면 모든 리소스 타입에 적용되는 **universal** 체크리스트, 값이 있으면 case-insensitive substring 매칭으로 **specific** 체크리스트가 됩니다.
 - 대표 평가 영역: System Stability(인프라·아키텍처·운영), Database Common, Azure MySQL, Azure PostgreSQL, Azure CosmosDB.
 - 지원 리소스 타입은 체크리스트의 `applicable_resource_types`와 `azure_resource_reader.SUPPORTED_RESOURCE_TYPES`를 따릅니다(Compute·Database·Networking·Storage·Monitoring·Security).
-- v2 경로는 여기에 더해 control ↔ 관리형 원천(Policy·Defender·Advisor·APRL) 매핑 YAML을 사용합니다(`experiments/coverage_spike/mappings/`).
+- v2 경로는 여기에 더해 control ↔ 관리형 원천(Policy·Defender·Advisor·APRL) 매핑 YAML을 사용합니다(`experiments/coverage_spike/mappings/`). 각 원천은 API 버전 또는 `query-sha256`으로 고정되어 판정 재현성을 보장합니다.
+
+> **corpus 방향**: 수작업 YAML 유지 비용을 줄이기 위해, v2는 Microsoft가 유지·갱신하는 corpus(APRL·Advisor·Defender·Azure Policy)를 **채택(ADOPT)** 하고 조직 고유 항목만 자체 관리하는 구조를 지향합니다. registry의 저작·유지 방식(자연어 문서 canonical / 구조화 canonical / 저작 표면+플라이휠 / agentic)은 coverage 실측과 온보딩 파일럿 이후로 **결정 보류** 상태입니다.
 
 ## 사전 요구사항
 
@@ -365,9 +371,12 @@ report_gen.generate_html_report(assessments)
 
 v1 점수는 `n/a`·`manual_review`를 제외한 scorable 항목 중 pass 비율 × 100으로 산정합니다.
 
-## 현재 구현 상태
+## 제품화 방향과 현재 위치
 
-프로덕션 전환은 [Issue #1 — 설계·기능 원점 정리](https://github.com/daeungo1/poc-aiops-arb/issues/1)의 §7 방향 논의를 기준으로 진행 중입니다.
+이 브랜치는 [Issue #1 — 설계·기능 원점 정리](https://github.com/daeungo1/poc-aiops-arb/issues/1)를 기준으로 진행합니다.
+Ⅰ부(§1–§7)는 PoC의 사실 기록이고, Ⅱ부(§8–§14)는 제품화 방향입니다.
+
+### Ⅰ부 §7 — 방향 논의 지점
 
 | 논의 지점 | 현재 상태 |
 |-----------|-----------|
@@ -377,7 +386,27 @@ v1 점수는 `n/a`·`manual_review`를 제외한 scorable 항목 중 pass 비율
 | ④ 챗봇 역할 — evidence 조회·해석 도구 | ⬜ 미구현 (현재 챗봇은 v1 파이프라인 런처) |
 | ⑤ 평가 방법 — 정확도 측정 기준 | 🟡 합성 fixture 기반 coverage gate + `backend/tests/enterprise/` |
 
-v1 경로(전체 파이프라인 end-to-end, UI·챗 이중 진입, 구독 스코프 격리, 특정 리포트 타겟 Terraform 생성, CLI 평가, DB/파일 폴백)는 그대로 동작합니다.
+### Ⅱ부 §11 — build vs adopt 기준 현재 위치
+
+원칙은 **Microsoft가 유지하는 것은 채택(ADOPT)하고, 차별화 지점에 집중(BUILD)** 하는 것입니다.
+
+| 계층 | Issue 방향 | 현재 브랜치 |
+|------|-----------|-------------|
+| 판정 corpus | **ADOPT** — APRL · Advisor · Defender · Azure Policy | 🟡 6종 어댑터 구현, 매핑은 Storage control 스파이크 범위 |
+| 판정 실행 | **BUILD(소)** — ControlDefinition registry + 6상태 모델 | ✅ `enterprise/registry.py` · `evaluator.py` (LLM은 verdict 미개입) |
+| Evidence | **BUILD(소)** — snapshot + provenance | ✅ `EvidenceRecord`(SHA-256 · 관찰 시각 · 원천 버전) · `snapshot_runs` |
+| Terraform 생성·검증 루프 | **BUILD(핵심 IP)** — finding 단위 생성 → fmt/validate/plan/scan → draft PR, 자동 적용 금지 | ⬜ `remediation_runs`/`remediation_artifacts` 스키마만 선반영 |
+| Agent 런타임 | **ADOPT** — Foundry hosted agent · tracing, 챗봇은 결과 해석·근거 인용으로 재정의 | ⬜ 현재는 자체 AG-UI 배관 + v1 런처 유지 |
+| Eval | **ADOPT + BUILD(소)** — golden fixture verdict oracle, CI promotion gate | 🟡 coverage gate + `tests/enterprise` 269개 통과 |
+| 인증 | **ADOPT** — App Service Easy Auth + OBO | ⬜ 현재는 수제 MSAL · UAMI 페더레이션 유지 |
+| UI | **RESPEC** — 화면·drill-down 계승, 데이터 계약 재정의 | ⬜ v1 화면 그대로 |
+
+- **선행 과제(§13-1)**: 조직 ARB 항목 중 관리형 원천으로 결정론 판정 가능한 비율 실측이 재설계 착수의 전제입니다.
+  `experiments/coverage_spike/`가 그 실험이며, 현재 `/api/v2`의 control registry도 이 산출물을 원천으로 사용합니다.
+- **결정 보류(§14)**: ControlDefinition registry의 저작·유지 방식(A~D안)은 coverage 실측과 온보딩 파일럿 이후로 미룹니다.
+  어느 안이든 registry 버전 관리 + 갱신 시 자동 회귀(coverage diff · verdict diff)와 사람 확정 단계는 유지합니다.
+- **계승 자산(§12)**: 구독 스코프 격리(OBO∩MI 교집합 + 헤더 검증), 결과 3계층 granularity, 체크리스트 계층 스키마,
+  UI 흐름, 배포 Terraform의 거버넌스 대응은 그대로 유지합니다. v1 경로도 동등성이 검증될 때까지 제거하지 않습니다.
 
 ## 라이선스
 

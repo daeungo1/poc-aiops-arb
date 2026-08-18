@@ -148,6 +148,9 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
   증거 결손·부분·충돌·스로틀링·권한부족은 `fail`이 아니라 **`unknown`**. verdict는 6상태로 고정
   (`pass`/`fail`/`unknown`/`not_applicable`/`exempted`/`manual_pending`). 모든 evidence는 source kind/reference/version·
   관찰 시각·SHA-256 content hash를 보유. 신규 Python 동작은 TDD(실패 테스트 → 최소 구현 → 재실행)로 추가.
+- **v2에서 LLM의 역할**: 근거 설명·후속 조사·`agent_assisted` 항목·remediation 초안에만 사용.
+  control은 `evaluator_kind`(`managed`/`custom`/`agent_assisted`/`manual`)로 판정 방식을 명시하고,
+  evidence source는 API 버전 또는 `query-sha256`로 고정해 재현성을 보장한다.
 - **롤백 경로 보존**: `/api/v2`는 `ENTERPRISE_ASSESSMENT_ENABLED`가 켜진 경우에만 라우터를 등록. 기존 `/api` 동작과
   테이블은 그대로 유지할 것.
 
@@ -168,14 +171,19 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
 
 ## Issue #1 기반 업데이트
 
-[Issue #1 — 설계·기능 원점 정리](https://github.com/daeungo1/poc-aiops-arb/issues/1) §7 논의 지점 기준 진행 상황.
+[Issue #1 — 설계·기능 원점 정리](https://github.com/daeungo1/poc-aiops-arb/issues/1) 기준. Ⅰ부 §7은 논의 지점, Ⅱ부 §11은 build vs adopt 방향.
 
-| 논의 지점 | 상태 |
+| 논의 지점 (Ⅰ부 §7) | 상태 |
 |---|---|
 | ① 판정 신뢰성 — 결정론 evaluator | ✅ `backend/enterprise/` + `/api/v2` |
 | ② 체크리스트 corpus 원천 매핑 | 🟡 Storage control 스파이크 범위 |
 | ③ Terraform 산출물 검증(validate·scan) | ⬜ `remediation_*` 스키마만 선반영 |
 | ④ 챗봇 evidence 조회·해석 도구 | ⬜ 미구현 (현재는 v1 런처) |
 | ⑤ 정확도 측정 기준 | 🟡 coverage gate + `backend/tests/enterprise/` |
+
+Ⅱ부 §11 방향 — ADOPT: 판정 corpus(APRL·Advisor·Defender·Policy) · Agent 런타임(Foundry) · 인증(Easy Auth) · Eval /
+BUILD: 판정 실행(registry + 6상태) · Evidence(provenance) · **Terraform 검증 루프(핵심 IP, finding 단위·자동 적용 금지)**.
+현재 브랜치는 BUILD 중 판정 실행·Evidence까지 반영. §14의 registry 저작·유지 방식(A~D)은 **결정 보류**이며,
+어느 안이든 registry 버전 관리 + 자동 회귀(coverage/verdict diff) + 사람 확정 단계는 필수.
 
 상세 플랜: [docs/superpowers/plans/2026-08-02-production-redesign.md](../docs/superpowers/plans/2026-08-02-production-redesign.md)
