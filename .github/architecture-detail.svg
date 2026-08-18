@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 1290" width="1680" height="1290"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 1060" width="1680" height="1060"
      font-family="'Segoe UI','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif">
-  <title>AIOps Resource Assessment 애플리케이션 아키텍처</title>
-  <desc>클라이언트, 엣지(nginx), API(FastAPI), 도메인(v1 LLM 평가 · v2 결정론 평가 · AG-UI 챗봇), 데이터 계층, 외부 Azure 서비스로 구성된 계층형 아키텍처</desc>
+  <title>AIOps ARB — 애플리케이션 상세 아키텍처</title>
+  <desc>클라이언트, 엣지(nginx), API(FastAPI), 도메인(v1 LLM 평가 · v2 결정론 평가 · AG-UI 챗봇), 데이터 계층, 외부 Azure 서비스로 구성된 계층형 상세 뷰</desc>
 
   <defs>
     <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -12,229 +12,190 @@
     </marker>
   </defs>
 
-  <rect x="0" y="0" width="1680" height="1290" fill="#ffffff"/>
+  <rect x="0" y="0" width="1680" height="1060" fill="#ffffff"/>
 
-  <!-- ── Title ────────────────────────────────────────────────────────────── -->
-  <text x="60" y="54" font-size="29" font-weight="700" fill="#0f172a">AIOps Resource Assessment — 애플리케이션 아키텍처</text>
-  <text x="60" y="82" font-size="14.5" fill="#475569">브랜치 prod-redesign/implementation · v1 LLM 평가(/api)와 v2 결정론 평가(/api/v2, ENTERPRISE_ASSESSMENT_ENABLED)를 병행한다</text>
+  <text x="60" y="52" font-size="27" font-weight="700" fill="#0f172a">AIOps ARB — 애플리케이션 상세 뷰</text>
+  <text x="60" y="79" font-size="14" fill="#475569">계층별 모듈 구성 · v1(LLM 평가) / v2(결정론 평가) / 챗봇 도구가 같은 API 표면을 공유한다</text>
 
-  <!-- ── Band 1: Client ───────────────────────────────────────────────────── -->
-  <rect x="60" y="110" width="940" height="130" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-  <text x="78" y="137" font-size="15" font-weight="700" fill="#1d4ed8">클라이언트 — 브라우저 · React 18 + Vite 5 + TypeScript + Tailwind (frontend/)</text>
+  <!-- Band 1: Client -->
+  <rect x="60" y="110" width="940" height="112" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="78" y="136" font-size="15" font-weight="700" fill="#1d4ed8">클라이언트 — React 18 + Vite 5 SPA (frontend/)</text>
 
-  <rect x="78" y="152" width="292" height="72" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
-  <text x="92" y="174" font-size="13" font-weight="600" fill="#1e3a8a">App.tsx — 화면 라우팅</text>
-  <text x="92" y="192" font-size="11.5" fill="#1e40af">dashboard · assessments</text>
-  <text x="92" y="209" font-size="11.5" fill="#1e40af">checklists · terraform</text>
+  <rect x="78" y="148" width="292" height="58" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="92" y="170" font-size="13" font-weight="600" fill="#1e3a8a">App.tsx — 4개 보드 라우팅</text>
+  <text x="92" y="190" font-size="11.5" fill="#1e40af">dashboard · assessments · checklists · terraform</text>
 
-  <rect x="384" y="152" width="292" height="72" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
-  <text x="398" y="174" font-size="13" font-weight="600" fill="#1e3a8a">context/ Provider</text>
-  <text x="398" y="192" font-size="11.5" fill="#1e40af">AzureSession · AssessmentRun</text>
-  <text x="398" y="209" font-size="11.5" fill="#1e40af">TerraformRun</text>
+  <rect x="384" y="148" width="292" height="58" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="398" y="170" font-size="13" font-weight="600" fill="#1e3a8a">context/ Provider</text>
+  <text x="398" y="190" font-size="11.5" fill="#1e40af">AzureSession · AssessmentRun · TerraformRun</text>
 
-  <rect x="690" y="152" width="292" height="72" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
-  <text x="704" y="174" font-size="13" font-weight="600" fill="#1e3a8a">ChatSidebar · useAgUiChat</text>
-  <text x="704" y="192" font-size="11.5" fill="#1e40af">lib/ ag-ui-client · authRest</text>
-  <text x="704" y="209" font-size="11.5" fill="#1e40af">azureScopeHeaders</text>
+  <rect x="690" y="148" width="292" height="58" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="704" y="170" font-size="13" font-weight="600" fill="#1e3a8a">ChatSidebar · useAgUiChat</text>
+  <text x="704" y="190" font-size="11.5" fill="#1e40af">ag-ui-client · authRest · azureScopeHeaders</text>
 
-  <!-- ── Band 2: Edge ─────────────────────────────────────────────────────── -->
-  <rect x="60" y="270" width="940" height="80" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
-  <text x="78" y="298" font-size="15" font-weight="700" fill="#0f766e">엣지 — nginx 프런트엔드 컨테이너 (docker/nginx.conf.template)</text>
-  <text x="78" y="320" font-size="12" fill="#115e59">React SPA 정적 서빙 + /api/* 리버스 프록시 → BACKEND_URL</text>
-  <text x="78" y="338" font-size="12" fill="#115e59">동일 오리진으로 처리하므로 별도 dev 서버·CORS 설정이 필요 없다</text>
+  <!-- Band 2: Edge -->
+  <rect x="60" y="252" width="940" height="70" rx="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+  <text x="78" y="280" font-size="15" font-weight="700" fill="#0f766e">엣지 — nginx 컨테이너 (docker/nginx.conf.template)</text>
+  <text x="78" y="304" font-size="12" fill="#115e59">SPA 정적 서빙 + /api/* 리버스 프록시 → 동일 오리진 처리로 CORS 설정 불필요</text>
 
-  <!-- ── Band 3: API ──────────────────────────────────────────────────────── -->
-  <rect x="60" y="380" width="940" height="260" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="78" y="406" font-size="15" font-weight="700" fill="#15803d">API — FastAPI · backend/agui_server.py (uvicorn :5100, 진입점 backend/main.py)</text>
+  <!-- Band 3: API -->
+  <rect x="60" y="352" width="940" height="220" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="78" y="378" font-size="15" font-weight="700" fill="#15803d">API — FastAPI · backend/agui_server.py (uvicorn :5100)</text>
 
-  <rect x="78" y="424" width="445" height="88" rx="8" fill="#dcfce7" stroke="#4ade80" stroke-width="1.5"/>
-  <text x="92" y="446" font-size="13" font-weight="600" fill="#14532d">DelegatedUserTokenMiddleware</text>
-  <text x="92" y="465" font-size="11.5" fill="#166534">경로별 ARM 쿠키·Bearer → UserOboCredential (사용자 위임)</text>
-  <text x="92" y="482" font-size="11.5" fill="#166534">그 외 요청은 DefaultAzureCredential (SAMI/UAMI)</text>
-  <text x="92" y="499" font-size="11.5" fill="#166534">agent/azure_credential.py 가 요청 스코프로 전환</text>
+  <rect x="78" y="392" width="445" height="72" rx="8" fill="#dcfce7" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="92" y="414" font-size="13" font-weight="600" fill="#14532d">DelegatedUserTokenMiddleware</text>
+  <text x="92" y="433" font-size="11.5" fill="#166534">지정 경로만 ARM 쿠키·Bearer → UserOboCredential</text>
+  <text x="92" y="451" font-size="11.5" fill="#166534">그 외에는 DefaultAzureCredential (SAMI/UAMI)</text>
 
-  <rect x="537" y="424" width="445" height="88" rx="8" fill="#dcfce7" stroke="#4ade80" stroke-width="1.5"/>
-  <text x="551" y="446" font-size="13" font-weight="600" fill="#14532d">AzureSessionContextMiddleware</text>
-  <text x="551" y="465" font-size="11.5" fill="#166534">X-Azure-Tenant-Id · X-Azure-Subscription-Id 헤더 검증</text>
-  <text x="551" y="482" font-size="11.5" fill="#166534">→ chat/tools/azure_session.py 도구 컨텍스트 주입</text>
-  <text x="551" y="499" font-size="11.5" fill="#166534">POST /api/chat 요청에만 적용</text>
+  <rect x="537" y="392" width="445" height="72" rx="8" fill="#dcfce7" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="551" y="414" font-size="13" font-weight="600" fill="#14532d">AzureSessionContextMiddleware</text>
+  <text x="551" y="433" font-size="11.5" fill="#166534">X-Azure-Tenant-Id · X-Azure-Subscription-Id 검증</text>
+  <text x="551" y="451" font-size="11.5" fill="#166534">→ chat/tools/azure_session.py 컨텍스트 주입</text>
 
-  <rect x="78" y="534" width="292" height="96" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="92" y="556" font-size="13" font-weight="600" fill="#92400e">/api/* — v1 라우트</text>
-  <text x="92" y="575" font-size="11.5" fill="#a16207">auth · azure · dashboard</text>
-  <text x="92" y="592" font-size="11.5" fill="#a16207">assessments · checklists</text>
-  <text x="92" y="609" font-size="11.5" fill="#a16207">terraform · downloads</text>
+  <rect x="78" y="484" width="292" height="76" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="92" y="506" font-size="13" font-weight="600" fill="#92400e">/api/* — v1 라우트</text>
+  <text x="92" y="525" font-size="11.5" fill="#a16207">auth · azure · dashboard</text>
+  <text x="92" y="543" font-size="11.5" fill="#a16207">assessments · checklists · terraform</text>
 
-  <rect x="384" y="534" width="292" height="96" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-  <text x="398" y="556" font-size="13" font-weight="600" fill="#3730a3">/api/v2/* — enterprise 라우트</text>
-  <text x="398" y="575" font-size="11.5" fill="#4338ca">controls · assessments · findings</text>
-  <text x="398" y="592" font-size="11.5" fill="#4338ca">ENTERPRISE_ASSESSMENT_ENABLED</text>
-  <text x="398" y="609" font-size="11.5" fill="#4338ca">미설정 시 라우터를 등록하지 않는다</text>
+  <rect x="384" y="484" width="292" height="76" rx="8" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="398" y="506" font-size="13" font-weight="600" fill="#3730a3">/api/v2/* — enterprise 라우트</text>
+  <text x="398" y="525" font-size="11.5" fill="#4338ca">controls · assessments · findings</text>
+  <text x="398" y="543" font-size="11.5" fill="#4338ca">ENTERPRISE_ASSESSMENT_ENABLED 게이트</text>
 
-  <rect x="690" y="534" width="292" height="96" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
-  <text x="704" y="556" font-size="13" font-weight="600" fill="#5b21b6">POST /api/chat — AG-UI</text>
-  <text x="704" y="575" font-size="11.5" fill="#6d28d9">Microsoft Agent Framework</text>
-  <text x="704" y="592" font-size="11.5" fill="#6d28d9">스트리밍 응답</text>
-  <text x="704" y="609" font-size="11.5" fill="#6d28d9">도구 호출로 v1 파이프라인 구동</text>
+  <rect x="690" y="484" width="292" height="76" rx="8" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="704" y="506" font-size="13" font-weight="600" fill="#5b21b6">POST /api/chat — AG-UI</text>
+  <text x="704" y="525" font-size="11.5" fill="#6d28d9">Microsoft Agent Framework</text>
+  <text x="704" y="543" font-size="11.5" fill="#6d28d9">도구 호출로 v1 파이프라인 구동</text>
 
-  <!-- ── Band 4: Domain ───────────────────────────────────────────────────── -->
-  <rect x="60" y="670" width="940" height="350" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
-  <text x="78" y="696" font-size="15" font-weight="700" fill="#334155">도메인 — 평가 파이프라인 · 에이전트 도구</text>
-  <text x="982" y="696" font-size="11.5" fill="#b91c1c" text-anchor="end">v2 원칙: 증거 결손·충돌은 fail이 아닌 unknown</text>
+  <!-- Band 4: Domain -->
+  <rect x="60" y="602" width="940" height="228" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="78" y="628" font-size="15" font-weight="700" fill="#334155">도메인 — 평가 파이프라인 · 에이전트 도구</text>
+  <text x="982" y="628" font-size="11.5" fill="#b91c1c" text-anchor="end">v2 원칙: 증거 결손·충돌은 fail이 아닌 unknown</text>
 
-  <!-- v1 -->
-  <rect x="78" y="712" width="292" height="294" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="92" y="736" font-size="13" font-weight="700" fill="#92400e">backend/agent/ — v1 LLM 평가</text>
-  <text x="92" y="760" font-size="12" font-weight="600" fill="#78350f">azure_resource_reader.py</text>
-  <text x="92" y="776" font-size="11" fill="#a16207">Resource Graph 리소스 인벤토리</text>
-  <text x="92" y="800" font-size="12" font-weight="600" fill="#78350f">checklist_loader.py</text>
-  <text x="92" y="816" font-size="11" fill="#a16207">DB 등록 YAML 체크리스트 로드</text>
-  <text x="92" y="840" font-size="12" font-weight="600" fill="#78350f">assessment_engine.py</text>
-  <text x="92" y="856" font-size="11" fill="#a16207">Foundry LLM 이 체크 항목 평가</text>
-  <text x="92" y="880" font-size="12" font-weight="600" fill="#78350f">report_generator.py</text>
-  <text x="92" y="896" font-size="11" fill="#a16207">Markdown · JSON · HTML 리포트</text>
-  <text x="92" y="920" font-size="12" font-weight="600" fill="#78350f">terraform_generator.py</text>
-  <text x="92" y="936" font-size="11" fill="#a16207">strict JSON Schema → HCL 4종</text>
-  <text x="92" y="960" font-size="12" font-weight="600" fill="#78350f">search_query.py · db/</text>
-  <text x="92" y="976" font-size="11" fill="#a16207">결과 조회 · psycopg 커넥션 풀</text>
+  <rect x="78" y="644" width="292" height="172" rx="8" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="92" y="668" font-size="13" font-weight="700" fill="#92400e">backend/agent/ — v1 LLM 평가</text>
+  <text x="92" y="692" font-size="12" font-weight="600" fill="#78350f">azure_resource_reader.py</text>
+  <text x="92" y="708" font-size="11" fill="#a16207">Resource Graph 리소스 수집</text>
+  <text x="92" y="730" font-size="12" font-weight="600" fill="#78350f">checklist_loader.py</text>
+  <text x="92" y="746" font-size="11" fill="#a16207">DB 등록 YAML 로드</text>
+  <text x="92" y="768" font-size="12" font-weight="600" fill="#78350f">assessment_engine.py</text>
+  <text x="92" y="784" font-size="11" fill="#a16207">Foundry LLM 평가 · 점수 산정</text>
+  <text x="92" y="806" font-size="12" font-weight="600" fill="#78350f">report_generator · terraform_generator</text>
 
-  <!-- v2 -->
-  <rect x="384" y="712" width="292" height="294" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
-  <text x="398" y="736" font-size="13" font-weight="700" fill="#3730a3">backend/enterprise/ — v2 결정론 평가</text>
-  <text x="398" y="760" font-size="12" font-weight="600" fill="#312e81">registry.ControlRegistry</text>
-  <text x="398" y="776" font-size="11" fill="#4338ca">control + source mapping YAML</text>
-  <text x="398" y="800" font-size="12" font-weight="600" fill="#312e81">adapters/</text>
-  <text x="398" y="816" font-size="11" fill="#4338ca">arm·arg·aprl·policy·defender·advisor</text>
-  <text x="398" y="840" font-size="12" font-weight="600" fill="#312e81">domain.EvidenceRecord</text>
-  <text x="398" y="856" font-size="11" fill="#4338ca">SHA-256 content hash · 관찰 시각</text>
-  <text x="398" y="880" font-size="12" font-weight="600" fill="#312e81">evaluator.DeterministicEvaluator</text>
-  <text x="398" y="896" font-size="11" fill="#4338ca">pass·fail·unknown·n/a·exempted·manual</text>
-  <text x="398" y="920" font-size="12" font-weight="600" fill="#312e81">service.EnterpriseAssessmentService</text>
-  <text x="398" y="936" font-size="11" fill="#4338ca">수집 → 평가 → 영속화 오케스트레이션</text>
-  <text x="398" y="960" font-size="12" font-weight="600" fill="#312e81">postgres_repository.py</text>
-  <text x="398" y="976" font-size="11" fill="#4338ca">DB 미설정 시 InMemory 폴백</text>
-  <text x="398" y="996" font-size="10.5" font-weight="600" fill="#b91c1c">LLM 은 verdict 를 변경할 수 없다</text>
+  <rect x="384" y="644" width="292" height="172" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="398" y="668" font-size="13" font-weight="700" fill="#3730a3">backend/enterprise/ — v2 결정론 평가</text>
+  <text x="398" y="692" font-size="12" font-weight="600" fill="#312e81">registry.py</text>
+  <text x="398" y="708" font-size="11" fill="#4338ca">control + source mapping YAML</text>
+  <text x="398" y="730" font-size="12" font-weight="600" fill="#312e81">adapters/</text>
+  <text x="398" y="746" font-size="11" fill="#4338ca">arm·arg·aprl·policy·defender·advisor</text>
+  <text x="398" y="768" font-size="12" font-weight="600" fill="#312e81">evaluator.py</text>
+  <text x="398" y="784" font-size="11" fill="#4338ca">6상태 verdict · LLM 미개입</text>
+  <text x="398" y="806" font-size="12" font-weight="600" fill="#312e81">service · postgres_repository</text>
 
-  <!-- chat -->
-  <rect x="690" y="712" width="292" height="294" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
-  <text x="704" y="736" font-size="13" font-weight="700" fill="#5b21b6">backend/chat/ — AG-UI 챗봇</text>
-  <text x="704" y="760" font-size="12" font-weight="600" fill="#4c1d95">agent.py</text>
-  <text x="704" y="776" font-size="11" fill="#6d28d9">SYSTEM_INSTRUCTIONS · create_agent()</text>
-  <text x="704" y="800" font-size="12" font-weight="600" fill="#4c1d95">AzureOpenAIResponsesClient</text>
-  <text x="704" y="816" font-size="11" fill="#6d28d9">배포 모델 gpt-5.2 · 백엔드 MI 고정</text>
-  <text x="704" y="840" font-size="12" font-weight="600" fill="#4c1d95">tools/assessment.py</text>
-  <text x="704" y="856" font-size="11" fill="#6d28d9">run_assessment (checklist_id 필수)</text>
-  <text x="704" y="880" font-size="12" font-weight="600" fill="#4c1d95">tools/search.py</text>
-  <text x="704" y="896" font-size="11" fill="#6d28d9">평가 결과 검색 · 리소스 상세</text>
-  <text x="704" y="920" font-size="12" font-weight="600" fill="#4c1d95">tools/terraform.py</text>
-  <text x="704" y="936" font-size="11" fill="#6d28d9">HCL 생성 · 다운로드 URL</text>
-  <text x="704" y="960" font-size="12" font-weight="600" fill="#4c1d95">tools/azure_session.py</text>
-  <text x="704" y="976" font-size="11" fill="#6d28d9">UI 테넌트·구독 스코프 주입</text>
+  <rect x="690" y="644" width="292" height="172" rx="8" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="704" y="668" font-size="13" font-weight="700" fill="#5b21b6">backend/chat/ — AG-UI 챗봇</text>
+  <text x="704" y="692" font-size="12" font-weight="600" fill="#4c1d95">agent.py</text>
+  <text x="704" y="708" font-size="11" fill="#6d28d9">SYSTEM_INSTRUCTIONS · 도구 9종</text>
+  <text x="704" y="730" font-size="12" font-weight="600" fill="#4c1d95">tools/assessment.py</text>
+  <text x="704" y="746" font-size="11" fill="#6d28d9">run_assessment (checklist_id 필수)</text>
+  <text x="704" y="768" font-size="12" font-weight="600" fill="#4c1d95">tools/search · tools/terraform</text>
+  <text x="704" y="784" font-size="11" fill="#6d28d9">결과 조회 · HCL 생성·다운로드</text>
+  <text x="704" y="806" font-size="12" font-weight="600" fill="#4c1d95">tools/azure_session.py</text>
 
-  <!-- ── Band 5: Data ─────────────────────────────────────────────────────── -->
-  <rect x="60" y="1050" width="600" height="180" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
-  <text x="78" y="1077" font-size="15" font-weight="700" fill="#854d0e">PostgreSQL 16 — backend/scripts/01_schema.sql</text>
-  <text x="78" y="1099" font-size="11.5" fill="#713f12">기동 시 agent/db_init.py 가 스키마를 적용하고, DB_HOST 미설정이면 파일 기반으로 폴백한다</text>
-  <text x="78" y="1126" font-size="12" font-weight="600" fill="#854d0e">v1 테이블</text>
-  <text x="78" y="1144" font-size="10.5" fill="#713f12">checklists · checklist_items · result_reports · result_resource_assessments</text>
-  <text x="78" y="1160" font-size="10.5" fill="#713f12">result_check_results · result_file · terraform_runs · terraform_run_files</text>
-  <text x="78" y="1186" font-size="12" font-weight="600" fill="#854d0e">v2 테이블</text>
-  <text x="78" y="1204" font-size="10.5" fill="#713f12">control_definitions · enterprise_evaluation_runs · snapshot_runs · evidence_records</text>
-  <text x="78" y="1220" font-size="10.5" fill="#713f12">enterprise_collection_failures · enterprise_verdicts · remediation_runs · remediation_artifacts</text>
+  <!-- Band 5: Data -->
+  <rect x="60" y="860" width="600" height="150" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+  <text x="78" y="887" font-size="15" font-weight="700" fill="#854d0e">PostgreSQL 16 — backend/scripts/01_schema.sql</text>
+  <text x="78" y="909" font-size="11.5" fill="#713f12">기동 시 agent/db_init.py 적용 · DB_HOST 미설정이면 파일 기반 폴백</text>
+  <text x="78" y="935" font-size="11.5" font-weight="600" fill="#854d0e">v1</text>
+  <text x="110" y="935" font-size="11" fill="#713f12">checklists · checklist_items · result_reports · result_* · terraform_runs</text>
+  <text x="78" y="961" font-size="11.5" font-weight="600" fill="#854d0e">v2</text>
+  <text x="110" y="961" font-size="11" fill="#713f12">control_definitions · snapshot_runs · evidence_records · enterprise_verdicts</text>
+  <text x="78" y="987" font-size="11.5" font-weight="600" fill="#854d0e">개선</text>
+  <text x="118" y="987" font-size="11" fill="#713f12">remediation_runs · remediation_artifacts</text>
 
-  <rect x="680" y="1050" width="320" height="180" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
-  <text x="698" y="1077" font-size="15" font-weight="700" fill="#854d0e">로컬 파일 산출물</text>
-  <text x="698" y="1101" font-size="11.5" fill="#713f12">results/ — MD · JSON · HTML 리포트</text>
-  <text x="698" y="1121" font-size="11.5" fill="#713f12">terraform/ — provider·variables·main·outputs</text>
-  <text x="698" y="1141" font-size="11.5" fill="#713f12">GET /api/downloads — 정적 다운로드</text>
-  <text x="698" y="1170" font-size="11.5" font-weight="600" fill="#854d0e">coverage spike 산출물</text>
-  <text x="698" y="1190" font-size="10.5" fill="#713f12">experiments/coverage_spike/reports/current.json</text>
-  <text x="698" y="1208" font-size="10.5" fill="#713f12">→ enterprise.coverage 로 해시 검증 후 읽는다</text>
+  <rect x="680" y="860" width="320" height="150" rx="12" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+  <text x="698" y="887" font-size="15" font-weight="700" fill="#854d0e">로컬 파일 산출물</text>
+  <text x="698" y="911" font-size="11.5" fill="#713f12">results/ — MD · JSON · HTML 리포트</text>
+  <text x="698" y="931" font-size="11.5" fill="#713f12">terraform/ — HCL 4종</text>
+  <text x="698" y="951" font-size="11.5" fill="#713f12">GET /api/downloads — 정적 서빙</text>
+  <text x="698" y="977" font-size="11" fill="#713f12">experiments/coverage_spike/reports/</text>
+  <text x="698" y="995" font-size="11" fill="#713f12">current.json (해시 검증 후 읽기)</text>
 
-  <!-- ── Right column: identity & external Azure ──────────────────────────── -->
-  <rect x="1080" y="110" width="540" height="130" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <!-- Right column -->
+  <rect x="1080" y="110" width="540" height="112" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
   <text x="1098" y="138" font-size="15" font-weight="700" fill="#991b1b">Microsoft Entra ID</text>
   <text x="1098" y="162" font-size="12" fill="#7f1d1d">OAuth2 Authorization Code · MSAL (agent/entra_sso.py)</text>
-  <text x="1098" y="182" font-size="12" fill="#7f1d1d">UAMI 페더레이션 client_assertion — 앱 시크릿 없음</text>
-  <text x="1098" y="202" font-size="12" fill="#7f1d1d">ARM 사용자 위임 토큰(OBO) 발급 · HttpOnly 쿠키 보관</text>
-  <text x="1098" y="222" font-size="12" fill="#7f1d1d">/api/auth/login → /api/getAToken → /api/auth/session</text>
+  <text x="1098" y="184" font-size="12" fill="#7f1d1d">UAMI 페더레이션 client_assertion — 앱 시크릿 없음</text>
+  <text x="1098" y="206" font-size="12" fill="#7f1d1d">ARM 사용자 위임 토큰(OBO) 발급 · HttpOnly 쿠키</text>
 
-  <rect x="1080" y="380" width="540" height="120" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
-  <text x="1098" y="408" font-size="15" font-weight="700" fill="#1e293b">Azure 제어 평면</text>
-  <text x="1098" y="432" font-size="12" fill="#334155">ARM REST · Azure Resource Graph</text>
-  <text x="1098" y="452" font-size="12" fill="#334155">GET /api/azure/subscriptions — OBO ∩ UAMI 교집합</text>
-  <text x="1098" y="472" font-size="12" fill="#334155">리소스 인벤토리는 v1 reader 와 v2 arm/arg adapter 가 공유</text>
+  <rect x="1080" y="352" width="540" height="112" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+  <text x="1098" y="380" font-size="15" font-weight="700" fill="#1e293b">Azure 제어 평면</text>
+  <text x="1098" y="404" font-size="12" fill="#334155">ARM REST · Azure Resource Graph</text>
+  <text x="1098" y="426" font-size="12" fill="#334155">GET /api/azure/subscriptions — OBO ∩ UAMI 교집합</text>
+  <text x="1098" y="448" font-size="12" fill="#334155">v1 reader 와 v2 arm/arg adapter 가 공유</text>
 
-  <rect x="1080" y="530" width="540" height="230" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
-  <text x="1098" y="558" font-size="15" font-weight="700" fill="#1e293b">관리형 evidence source (읽기 전용)</text>
-  <text x="1098" y="584" font-size="12" fill="#334155">Azure Policy — policy states</text>
-  <text x="1098" y="606" font-size="12" fill="#334155">Microsoft Defender for Cloud — assessments</text>
-  <text x="1098" y="628" font-size="12" fill="#334155">Azure Advisor — recommendations</text>
-  <text x="1098" y="650" font-size="12" fill="#334155">APRL / ARG KQL 쿼리</text>
-  <text x="1098" y="672" font-size="12" fill="#334155">Storage service properties (ARM)</text>
-  <text x="1098" y="702" font-size="11.5" fill="#b91c1c">수집 실패·스로틀링·권한 부족은 CollectionFailure 로 기록되고</text>
-  <text x="1098" y="720" font-size="11.5" fill="#b91c1c">해당 control 의 판정은 unknown 으로 확정된다</text>
+  <rect x="1080" y="494" width="540" height="176" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+  <text x="1098" y="522" font-size="15" font-weight="700" fill="#1e293b">관리형 evidence 원천 (읽기 전용)</text>
+  <text x="1098" y="548" font-size="12" fill="#334155">Azure Policy — policy states</text>
+  <text x="1098" y="570" font-size="12" fill="#334155">Microsoft Defender for Cloud — assessments</text>
+  <text x="1098" y="592" font-size="12" fill="#334155">Azure Advisor — recommendations</text>
+  <text x="1098" y="614" font-size="12" fill="#334155">APRL / ARG KQL — query-sha256 로 고정</text>
+  <text x="1098" y="642" font-size="11.5" fill="#b91c1c">수집 실패·스로틀링은 CollectionFailure 로 기록되고</text>
+  <text x="1098" y="660" font-size="11.5" fill="#b91c1c">해당 control 판정은 unknown 으로 확정된다</text>
 
-  <rect x="1080" y="790" width="540" height="130" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
-  <text x="1098" y="818" font-size="15" font-weight="700" fill="#1e293b">Azure AI Foundry</text>
-  <text x="1098" y="842" font-size="12" fill="#334155">AzureOpenAIResponsesClient · 배포 모델 gpt-5.2</text>
-  <text x="1098" y="862" font-size="12" fill="#334155">호출 자격 증명은 항상 백엔드 MI (SAMI/UAMI)</text>
-  <text x="1098" y="882" font-size="12" fill="#334155">v1 체크 평가 · 챗봇 응답 · Terraform 초안 생성</text>
-  <text x="1098" y="902" font-size="12" fill="#b91c1c">v2 결정론 판정에는 관여하지 않는다</text>
+  <rect x="1080" y="700" width="540" height="112" rx="12" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+  <text x="1098" y="728" font-size="15" font-weight="700" fill="#1e293b">Azure AI Foundry</text>
+  <text x="1098" y="752" font-size="12" fill="#334155">AzureOpenAIResponsesClient · 배포 모델 gpt-5.2</text>
+  <text x="1098" y="774" font-size="12" fill="#334155">호출 자격 증명은 항상 백엔드 MI (SAMI/UAMI)</text>
+  <text x="1098" y="796" font-size="12" fill="#b91c1c">v2 결정론 판정에는 관여하지 않는다</text>
 
-  <!-- ── Legend ───────────────────────────────────────────────────────────── -->
-  <rect x="1080" y="950" width="540" height="280" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
-  <text x="1098" y="976" font-size="14" font-weight="700" fill="#334155">범례</text>
+  <rect x="1080" y="860" width="540" height="150" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="1098" y="886" font-size="14" font-weight="700" fill="#334155">범례</text>
+  <rect x="1098" y="898" width="16" height="16" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="1124" y="911" font-size="12" fill="#334155">클라이언트</text>
+  <rect x="1300" y="898" width="16" height="16" rx="3" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="1326" y="911" font-size="12" fill="#334155">엣지 · nginx</text>
+  <rect x="1098" y="924" width="16" height="16" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="1124" y="937" font-size="12" fill="#334155">API · 미들웨어</text>
+  <rect x="1300" y="924" width="16" height="16" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="1326" y="937" font-size="12" fill="#334155">v1 LLM 평가</text>
+  <rect x="1098" y="950" width="16" height="16" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="1124" y="963" font-size="12" fill="#334155">v2 결정론 평가</text>
+  <rect x="1300" y="950" width="16" height="16" rx="3" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="1326" y="963" font-size="12" fill="#334155">AG-UI 챗봇</text>
+  <rect x="1098" y="976" width="16" height="16" rx="3" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="1124" y="989" font-size="12" fill="#334155">데이터 · 산출물</text>
+  <rect x="1300" y="976" width="16" height="16" rx="3" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+  <text x="1326" y="989" font-size="12" fill="#334155">외부 Azure · ID</text>
 
-  <rect x="1098" y="986" width="16" height="16" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
-  <text x="1124" y="999" font-size="12" fill="#334155">클라이언트 (frontend/)</text>
-  <rect x="1098" y="1012" width="16" height="16" rx="3" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
-  <text x="1124" y="1025" font-size="12" fill="#334155">엣지 · nginx (docker/)</text>
-  <rect x="1098" y="1038" width="16" height="16" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-  <text x="1124" y="1051" font-size="12" fill="#334155">API · 미들웨어 (agui_server.py)</text>
-  <rect x="1098" y="1064" width="16" height="16" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
-  <text x="1124" y="1077" font-size="12" fill="#334155">v1 LLM 평가 (backend/agent)</text>
-  <rect x="1098" y="1090" width="16" height="16" rx="3" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
-  <text x="1124" y="1103" font-size="12" fill="#334155">v2 결정론 평가 (backend/enterprise)</text>
-  <rect x="1098" y="1116" width="16" height="16" rx="3" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
-  <text x="1124" y="1129" font-size="12" fill="#334155">AG-UI 챗봇 (backend/chat)</text>
-  <rect x="1098" y="1142" width="16" height="16" rx="3" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
-  <text x="1124" y="1155" font-size="12" fill="#334155">데이터 · 산출물</text>
-  <rect x="1098" y="1168" width="16" height="16" rx="3" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
-  <text x="1124" y="1181" font-size="12" fill="#334155">외부 Azure 서비스 · Entra ID</text>
+  <!-- Arrows -->
+  <path d="M530,222 L530,248" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="542" y="242" font-size="11" fill="#475569">HTTPS 443</text>
 
-  <text x="1098" y="1208" font-size="11" fill="#64748b">실선 화살표: 요청 · 데이터 흐름</text>
-  <text x="1098" y="1224" font-size="11" fill="#64748b">점선 화살표: 토큰 발급 · 세션 수립 경로</text>
+  <path d="M530,322 L530,348" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="542" y="342" font-size="11" fill="#475569">/api/* 프록시</text>
 
-  <!-- ── Flow arrows ──────────────────────────────────────────────────────── -->
-  <path d="M530,240 L530,266" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="542" y="259" font-size="11" fill="#475569">HTTPS 443</text>
+  <path d="M224,572 L224,598" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <path d="M530,572 L530,598" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <path d="M836,572 L836,598" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
 
-  <path d="M530,350 L530,376" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="542" y="369" font-size="11" fill="#475569">/api/* 프록시</text>
+  <path d="M224,830 L224,856" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <path d="M530,830 L530,856" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <path d="M836,830 L836,856" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
 
-  <path d="M224,640 L224,666" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <path d="M530,640 L530,666" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <path d="M836,640 L836,666" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <path d="M1000,166 L1076,166" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="1038" y="158" font-size="11" fill="#475569" text-anchor="middle">SSO</text>
 
-  <path d="M224,1020 L224,1046" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <path d="M530,1020 L530,1046" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <path d="M836,1020 L836,1046" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="848" y="1040" font-size="11" fill="#475569">리포트 · HCL</text>
+  <path d="M1000,412 L1076,412" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="1038" y="404" font-size="11" fill="#475569" text-anchor="middle">ARM 조회</text>
 
-  <path d="M1000,175 L1076,175" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="1038" y="167" font-size="11" fill="#475569" text-anchor="middle">SSO</text>
+  <path d="M1000,640 L1076,640" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="1038" y="632" font-size="11" fill="#475569" text-anchor="middle">evidence</text>
 
-  <path d="M1000,440 L1076,440" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="1038" y="432" font-size="11" fill="#475569" text-anchor="middle">ARM 조회</text>
+  <path d="M1000,760 L1076,760" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
+  <text x="1038" y="752" font-size="11" fill="#475569" text-anchor="middle">LLM 호출</text>
 
-  <path d="M1000,700 L1076,700" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="1038" y="692" font-size="11" fill="#475569" text-anchor="middle">evidence</text>
-
-  <path d="M1000,850 L1076,850" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arw)"/>
-  <text x="1038" y="842" font-size="11" fill="#475569" text-anchor="middle">LLM 호출</text>
-
-  <path d="M1350,240 L1350,318 L1030,318 L1030,410 L1004,410"
+  <path d="M1350,222 L1350,286 L1030,286 L1030,382 L1004,382"
         stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#arwRed)"/>
-  <text x="1180" y="310" font-size="11" fill="#b91c1c">위임 토큰(OBO) · 세션 쿠키</text>
+  <text x="1180" y="278" font-size="11" fill="#b91c1c">위임 토큰(OBO) · 세션 쿠키</text>
 </svg>

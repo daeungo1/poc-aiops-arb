@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 580" width="1240" height="580"
+     font-family="'Segoe UI','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif">
+  <title>평가 파이프라인 — v1 LLM 판정 vs v2 결정론 판정</title>
+  <desc>v1은 리소스 수집부터 LLM 평가·리포트·Terraform 초안까지, v2는 control registry부터 evidence 수집·결정론 판정·영속화까지의 단계를 비교한 도식</desc>
+
+  <defs>
+    <marker id="p-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+    <marker id="p-indigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6366f1"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="580" fill="#ffffff"/>
+
+  <text x="40" y="44" font-size="22" font-weight="700" fill="#0f172a">평가 파이프라인 — 두 갈래 판정 경로</text>
+  <text x="40" y="70" font-size="13" fill="#64748b">공통 전제: UI가 선택한 테넌트·구독 헤더를 ARM 역조회로 검증한 뒤, 해당 스코프의 리소스만 대상으로 삼는다</text>
+
+  <!-- v1 -->
+  <rect x="40" y="100" width="1160" height="180" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="2"/>
+  <text x="60" y="130" font-size="15" font-weight="700" fill="#92400e">v1 · backend/agent — LLM 판정 (/api/assessments)</text>
+
+  <rect x="60" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="74" y="174" font-size="12.5" font-weight="700" fill="#78350f">① 리소스 수집</text>
+  <text x="74" y="196" font-size="11" fill="#a16207">Resource Graph KQL</text>
+  <text x="74" y="213" font-size="11" fill="#a16207">구독 · RG · ID 필터</text>
+
+  <rect x="251" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="265" y="174" font-size="12.5" font-weight="700" fill="#78350f">② 체크리스트 매칭</text>
+  <text x="265" y="196" font-size="11" fill="#a16207">specific + universal</text>
+  <text x="265" y="213" font-size="11" fill="#a16207">applicable_resource</text>
+  <text x="265" y="230" font-size="11" fill="#a16207">_types 기준</text>
+
+  <rect x="442" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="456" y="174" font-size="12.5" font-weight="700" fill="#78350f">③ 병렬 LLM 평가</text>
+  <text x="456" y="196" font-size="11" fill="#a16207">ThreadPoolExecutor</text>
+  <text x="456" y="213" font-size="11" fill="#a16207">Foundry Responses API</text>
+  <text x="456" y="230" font-size="11" fill="#a16207">리소스 JSON 전체 투입</text>
+
+  <rect x="633" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="647" y="174" font-size="12.5" font-weight="700" fill="#78350f">④ 응답 정규화</text>
+  <text x="647" y="196" font-size="11" fill="#a16207">pass · fail · warning</text>
+  <text x="647" y="213" font-size="11" fill="#a16207">n/a · manual_review</text>
+  <text x="647" y="230" font-size="11" fill="#a16207">호출 실패는 manual</text>
+
+  <rect x="824" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="838" y="174" font-size="12.5" font-weight="700" fill="#78350f">⑤ 점수 · 리포트</text>
+  <text x="838" y="196" font-size="11" fill="#a16207">pass ÷ scorable × 100</text>
+  <text x="838" y="213" font-size="11" fill="#a16207">MD · JSON · HTML</text>
+  <text x="838" y="230" font-size="11" fill="#a16207">DB 3계층 저장</text>
+
+  <rect x="1015" y="148" width="163" height="112" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="1029" y="174" font-size="12.5" font-weight="700" fill="#78350f">⑥ Terraform 초안</text>
+  <text x="1029" y="196" font-size="11" fill="#a16207">리포트 1건 단위</text>
+  <text x="1029" y="213" font-size="11" fill="#a16207">provider · variables</text>
+  <text x="1029" y="230" font-size="11" fill="#a16207">main · outputs</text>
+
+  <path d="M223,204 L249,204" stroke="#d97706" stroke-width="2" marker-end="url(#p-amber)"/>
+  <path d="M414,204 L440,204" stroke="#d97706" stroke-width="2" marker-end="url(#p-amber)"/>
+  <path d="M605,204 L631,204" stroke="#d97706" stroke-width="2" marker-end="url(#p-amber)"/>
+  <path d="M796,204 L822,204" stroke="#d97706" stroke-width="2" marker-end="url(#p-amber)"/>
+  <path d="M987,204 L1013,204" stroke="#d97706" stroke-width="2" marker-end="url(#p-amber)"/>
+
+  <!-- v2 -->
+  <rect x="40" y="310" width="1160" height="180" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="2"/>
+  <text x="60" y="340" font-size="15" font-weight="700" fill="#3730a3">v2 · backend/enterprise — 결정론 판정 (/api/v2, LLM 미개입)</text>
+
+  <rect x="60" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="74" y="384" font-size="12.5" font-weight="700" fill="#312e81">① control registry</text>
+  <text x="74" y="406" font-size="11" fill="#4338ca">체크리스트 + source</text>
+  <text x="74" y="423" font-size="11" fill="#4338ca">mapping YAML</text>
+  <text x="74" y="440" font-size="11" fill="#4338ca">control 버전 고정</text>
+
+  <rect x="251" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="265" y="384" font-size="12.5" font-weight="700" fill="#312e81">② evidence 수집</text>
+  <text x="265" y="406" font-size="11" fill="#4338ca">ARM · ARG · Policy</text>
+  <text x="265" y="423" font-size="11" fill="#4338ca">Defender · Advisor · APRL</text>
+  <text x="265" y="440" font-size="11" fill="#4338ca">API 버전 · query-sha256</text>
+
+  <rect x="442" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="456" y="384" font-size="12.5" font-weight="700" fill="#312e81">③ provenance 검증</text>
+  <text x="456" y="406" font-size="11" fill="#4338ca">동일 resource_id 확인</text>
+  <text x="456" y="423" font-size="11" fill="#4338ca">SHA-256 content hash</text>
+  <text x="456" y="440" font-size="11" fill="#4338ca">관찰 시각 기록</text>
+
+  <rect x="633" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="647" y="384" font-size="12.5" font-weight="700" fill="#312e81">④ 결정론 assertion</text>
+  <text x="647" y="406" font-size="11" fill="#4338ca">selector · operator</text>
+  <text x="647" y="423" font-size="11" fill="#4338ca">expected 비교</text>
+  <text x="647" y="440" font-size="11" fill="#4338ca">state rule 적용</text>
+
+  <rect x="824" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="838" y="384" font-size="12.5" font-weight="700" fill="#312e81">⑤ verdict 6상태</text>
+  <text x="838" y="406" font-size="11" fill="#4338ca">pass · fail · unknown</text>
+  <text x="838" y="423" font-size="11" fill="#4338ca">not_applicable · exempted</text>
+  <text x="838" y="440" font-size="11" fill="#4338ca">manual_pending</text>
+
+  <rect x="1015" y="358" width="163" height="112" rx="8" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="1029" y="384" font-size="12.5" font-weight="700" fill="#312e81">⑥ 영속화</text>
+  <text x="1029" y="406" font-size="11" fill="#4338ca">evidence_records</text>
+  <text x="1029" y="423" font-size="11" fill="#4338ca">enterprise_verdicts</text>
+  <text x="1029" y="440" font-size="11" fill="#4338ca">collection_failures</text>
+
+  <path d="M223,414 L249,414" stroke="#6366f1" stroke-width="2" marker-end="url(#p-indigo)"/>
+  <path d="M414,414 L440,414" stroke="#6366f1" stroke-width="2" marker-end="url(#p-indigo)"/>
+  <path d="M605,414 L631,414" stroke="#6366f1" stroke-width="2" marker-end="url(#p-indigo)"/>
+  <path d="M796,414 L822,414" stroke="#6366f1" stroke-width="2" marker-end="url(#p-indigo)"/>
+  <path d="M987,414 L1013,414" stroke="#6366f1" stroke-width="2" marker-end="url(#p-indigo)"/>
+
+  <text x="40" y="524" font-size="12.5" fill="#b91c1c">v2 규칙: 증거가 없거나 불완전·충돌하거나 수집이 실패하면 fail 로 추론하지 않고 unknown 으로 확정하며, 사유는 CollectionFailure 로 남긴다.</text>
+  <text x="40" y="548" font-size="12.5" fill="#64748b">v2 에서 LLM 은 근거 설명 · 후속 조사 · agent_assisted 항목 · remediation 초안에만 사용되고 verdict 에는 관여하지 않는다.</text>
+</svg>
