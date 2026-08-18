@@ -23,8 +23,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import PlainTextResponse, JSONResponse, Response, RedirectResponse
 from starlette.concurrency import run_in_threadpool
-from enterprise.adapters.base import TokenCredential
-from enterprise.service import EnterpriseAssessmentService
+from enterprise.runtime import get_enterprise_service
 from agent.subscription_scope import normalize_subscription_id
 from agent.storage_paths import LEGACY_STORAGE_SUBSCRIPTION_KEY
 
@@ -146,10 +145,6 @@ def create_agent():
 
 _checklist_loader_singleton: Any = None
 _checklist_loader_lock = threading.Lock()
-_enterprise_registry_singleton: Any = None
-_enterprise_repository_singleton: Any = None
-_enterprise_transport_singleton: Any = None
-_enterprise_lock = threading.Lock()
 
 
 def get_checklist_loader():
@@ -164,44 +159,6 @@ def get_checklist_loader():
 
         _checklist_loader_singleton = get_configured_checklist_loader(PROJECT_DIR)
         return _checklist_loader_singleton
-
-
-def _enterprise_service_provider(credential: TokenCredential) -> "EnterpriseAssessmentService":
-    from enterprise.service import EnterpriseAssessmentService
-
-    global _enterprise_registry_singleton
-    global _enterprise_repository_singleton
-    global _enterprise_transport_singleton
-
-    with _enterprise_lock:
-        if _enterprise_registry_singleton is None:
-            from enterprise.registry import ControlRegistry
-
-            checklist_path = PROJECT_DIR.parent / "experiments" / "coverage_spike" / "checklists" / "azure_storage_production_readiness.yaml"
-            mapping_path = PROJECT_DIR.parent / "experiments" / "coverage_spike" / "mappings" / "azure_storage_production_readiness.yaml"
-            _enterprise_registry_singleton = ControlRegistry.load(checklist_path, mapping_path)
-
-        if _enterprise_repository_singleton is None:
-            from agent.db.connection import is_db_configured
-            from enterprise.postgres_repository import PostgresEnterpriseRepository
-            from enterprise.repository import InMemoryEnterpriseRepository
-
-            if is_db_configured():
-                _enterprise_repository_singleton = PostgresEnterpriseRepository()
-            else:
-                _enterprise_repository_singleton = InMemoryEnterpriseRepository()
-
-        if _enterprise_transport_singleton is None:
-            from enterprise.adapters.base import AioHttpTransport
-
-            _enterprise_transport_singleton = AioHttpTransport()
-
-    return EnterpriseAssessmentService(
-        registry=_enterprise_registry_singleton,
-        repository=_enterprise_repository_singleton,
-        transport=_enterprise_transport_singleton,
-        credential=credential,
-    )
 
 
 def invalidate_checklist_loader_cache() -> None:
@@ -462,7 +419,7 @@ def create_app() -> FastAPI:
     if enterprise_assessment_enabled():
         app.include_router(
             create_enterprise_router(
-                _enterprise_service_provider,
+                get_enterprise_service,
                 _validate_azure_session_headers,
             )
         )

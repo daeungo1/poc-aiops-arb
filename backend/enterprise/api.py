@@ -31,6 +31,8 @@ class EnterpriseAssessmentAccepted(BaseModel):
 class AsyncStaticTokenCredential(TokenCredential):
     """Request-scoped async credential wrapper over UserOboCredential."""
 
+    __enterprise_delegated_request__ = True
+
     def __init__(self, raw_token: str) -> None:
         self._raw_token = (raw_token or "").strip()
         self._obo = UserOboCredential(self._raw_token)

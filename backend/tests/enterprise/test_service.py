@@ -231,6 +231,59 @@ async def test_service_rejects_invalid_control_key(registry: ControlRegistry):
 
 
 @pytest.mark.asyncio
+async def test_service_rejects_resource_ids_above_limit_before_dedup(registry: ControlRegistry):
+    service = EnterpriseAssessmentService(
+        registry=registry,
+        repository=InMemoryEnterpriseRepository(),
+        transport=object(),
+        credential=DummyCredential(),
+    )
+    duplicated = [
+        "/subscriptions/sub-a/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/acct"
+    ] * (EnterpriseAssessmentService.MAX_RESOURCE_IDS + 1)
+
+    with pytest.raises(EnterpriseServiceError, match="resource_ids") as excinfo:
+        await service.run_assessment("tenant-a", "sub-a", duplicated, None)
+
+    assert excinfo.value.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_service_rejects_unique_resource_ids_above_limit(registry: ControlRegistry):
+    service = EnterpriseAssessmentService(
+        registry=registry,
+        repository=InMemoryEnterpriseRepository(),
+        transport=object(),
+        credential=DummyCredential(),
+    )
+    unique = [
+        f"/subscriptions/sub-a/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/acct{index}"
+        for index in range(EnterpriseAssessmentService.MAX_RESOURCE_IDS + 1)
+    ]
+
+    with pytest.raises(EnterpriseServiceError, match="resource_ids") as excinfo:
+        await service.run_assessment("tenant-a", "sub-a", unique, None)
+
+    assert excinfo.value.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_service_rejects_control_keys_above_limit_before_resolution(registry: ControlRegistry):
+    service = EnterpriseAssessmentService(
+        registry=registry,
+        repository=InMemoryEnterpriseRepository(),
+        transport=object(),
+        credential=DummyCredential(),
+    )
+    repeated = ["storage.secure_transfer"] * (EnterpriseAssessmentService.MAX_CONTROL_KEYS + 1)
+
+    with pytest.raises(EnterpriseServiceError, match="control_keys") as excinfo:
+        await service.run_assessment("tenant-a", "sub-a", None, repeated)
+
+    assert excinfo.value.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_service_unexpected_exception_marks_run_failed(registry: ControlRegistry):
     repository = InMemoryEnterpriseRepository()
 

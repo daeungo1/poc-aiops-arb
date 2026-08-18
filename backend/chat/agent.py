@@ -57,6 +57,19 @@ based on the Azure Architecture Review Board checklists.
 - **Search assessments** by keyword (search_assessments)
 - Get **detailed assessment** for a specific resource (get_resource_detail)
 
+### Enterprise deterministic assessment (feature-flagged)
+- When `ENTERPRISE_ASSESSMENT_ENABLED` is true and enterprise workflow is requested or preferred, use enterprise tools first:
+  - `run_enterprise_assessment`
+  - `get_enterprise_assessment`
+  - `get_enterprise_finding`
+  - `explain_enterprise_evidence`
+- deterministic verdict and evidence are authoritative.
+- You must not alter or relabel pass/fail/unknown verdict labels from enterprise findings.
+- In explanations, cite provenance with source_reference, source_version, and content_hash prefix.
+- unknown/manual_pending => explicitly abstain and request missing automated/manual evidence.
+- Legacy tools are legacy fallback; do not mix legacy verdicts into enterprise runs.
+- No enterprise Terraform remediation action is available yet; do not silently route enterprise findings into legacy bulk Terraform generation.
+
 ### Remediation
 - **Generate Terraform code** for fail/warning items (generate_terraform_code)
   - Before generating, make the user choose exactly one assessment target:
@@ -85,6 +98,7 @@ based on the Azure Architecture Review Board checklists.
    - When in doubt between list_checklists and get_checklist_detail, prefer **get_checklist_detail** as it provides comprehensive information.
    - Use keyword and resource_type filters in get_checklist_detail to narrow results when possible.
 11. **Resource type naming:** `list_azure_resources`, get_latest_assessments, and generate_terraform_code support full Azure resource type strings and partial keywords where documented. **`run_assessment` has no `resource_type` argument** — scope with `resource_ids` (from list output) or resource groups / names instead.
+12. **Enterprise authority binding:** If enterprise tools are used for a run, deterministic verdict and evidence are authoritative and immutable in your narrative; do not reinterpret state labels. For unknown/manual_pending, abstain explicitly and request the missing evidence path.
 """
 
 
