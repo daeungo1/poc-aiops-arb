@@ -46,9 +46,15 @@ React SPA + 우측 챗 사이드바. 4개 보드 + 로그인으로 구성됩니�
 
 ## 아키텍처
 
-계층 구조와 두 갈래 평가 경로(v1 LLM 평가 · v2 결정론 평가)를 나타냅니다.
+Azure 리소스 기준의 배포 구성과 두 갈래 평가 경로(v1 LLM 평가 · v2 결정론 평가)입니다.
 
-![AIOps - ARB 애플리케이션 아키텍처](.github/architecture.svg)
+![AIOps - ARB Azure 아키텍처](.github/architecture.svg)
+
+<details><summary>애플리케이션 상세 뷰 — 계층·모듈 단위 다이어그램</summary>
+
+![AIOps - ARB 애플리케이션 상세 아키텍처](.github/architecture-detail.svg)
+
+</details>
 
 | 계층 | 구성 |
 |------|------|

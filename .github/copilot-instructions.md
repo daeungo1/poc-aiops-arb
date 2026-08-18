@@ -7,9 +7,11 @@
 
 ## 아키텍처 한눈에 보기
 
-![애플리케이션 아키텍처](architecture.svg)
+![Azure 아키텍처](architecture.svg)
 
-<details><summary>배포 토폴로지</summary>
+<details><summary>상세 뷰 (계층·모듈) · 초기 배포 토폴로지</summary>
+
+![애플리케이션 상세 아키텍처](architecture-detail.svg)
 
 ![배포 아키텍처](architecture.png)
 
