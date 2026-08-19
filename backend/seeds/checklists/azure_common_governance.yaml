@@ -1,0 +1,116 @@
+metadata:
+  name: Azure 공통 거버넌스 표준 점검
+  version: "1.0.0"
+  description: >-
+    리소스 종류와 무관하게 적용하는 범용(universal) 체크리스트.
+    applicable_resource_types 를 비워 두면 모든 리소스 타입에 적용된다.
+    Microsoft Cloud Security Benchmark(MCSB)와 Well-Architected Framework 의 공통 항목을 다룬다.
+  applicable_resource_types: []
+
+categories:
+  - id: governance
+    name: 거버넌스
+    items:
+      - id: tagging
+        name: 태그·소유권
+        checks:
+          - question: 소유자(owner) 태그가 지정되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: tag
+              condition:
+                field: tags.owner
+              guidance: WAF Operational Excellence — 장애·비용 문의의 책임자를 식별할 수 있어야 한다.
+          - question: 환경(env) 태그가 지정되어 있는가? (prod/stg/dev)
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: tag
+              condition:
+                field: tags.env
+              guidance: 환경별 정책·비용 분리를 위해 필요하다.
+          - question: 비용 센터 또는 청구 대상 태그가 지정되어 있는가?
+            priority: LOW
+            azure_check:
+              type: automated
+              check_method: tag
+              condition:
+                field: tags.cost-center
+              guidance: WAF Cost Optimization — 비용 귀속을 명확히 한다.
+
+      - id: placement
+        name: 배치
+        checks:
+          - question: 승인된 리전에 배포되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              condition:
+                field: location
+              guidance: >-
+                데이터 주권·지연 요건에 따라 조직이 승인한 리전 목록을 따른다.
+          - question: 명명 규칙을 따르는가?
+            priority: LOW
+            azure_check:
+              type: manual
+              guidance: "조직 표준 접두사·접미사 규칙(예: <type>-<workload>-<env>-<region>)을 따른다."
+
+  - id: security
+    name: 보안 공통
+    items:
+      - id: identity
+        name: ID·시크릿
+        checks:
+          - question: 리소스 접근에 관리 ID를 사용하고 시크릿 하드코딩이 없는가?
+            priority: HIGH
+            azure_check:
+              type: manual
+              guidance: MCSB Identity Management(IM) — 연결 문자열·키 대신 관리 ID + RBAC 를 사용한다.
+          - question: 공용 인바운드 노출이 업무상 필요한 범위로 제한되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: manual
+              guidance: MCSB Network Security(NS) — 불필요한 공용 엔드포인트를 제거한다.
+          - question: Microsoft Defender for Cloud 권장 사항의 High 심각도 항목이 해소되었는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: defender_assessment
+              guidance: >-
+                MCSB Logging and Threat Detection(LT) — 관리형 보안 평가 결과를 정기적으로 처리한다.
+
+  - id: operations
+    name: 운영 공통
+    items:
+      - id: monitoring
+        name: 모니터링
+        checks:
+          - question: 진단 설정이 구성되어 로그·메트릭을 중앙에 보내고 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: diagnostic_settings
+              guidance: 리소스별 로그가 Log Analytics 등 중앙 저장소로 전송되는지 확인한다.
+          - question: 핵심 지표에 대한 경고 규칙이 설정되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: manual
+              guidance: WAF Operational Excellence — 장애를 사용자보다 먼저 인지할 수 있어야 한다.
+          - question: 삭제 방지가 필요한 리소스에 잠금(CanNotDelete)이 걸려 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: manual
+              guidance: 운영 중요 리소스의 실수 삭제를 방지한다.
+
+      - id: cost
+        name: 비용
+        checks:
+          - question: 미사용·유휴 리소스가 아닌지 검토되었는가?
+            priority: LOW
+            azure_check:
+              type: automated
+              check_method: advisor_recommendation
+              guidance: >-
+                WAF Cost Optimization — Azure Advisor 비용 권장 사항을 주기적으로 확인한다.

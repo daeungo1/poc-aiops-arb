@@ -1,0 +1,171 @@
+metadata:
+  name: Azure Database for PostgreSQL 표준 점검
+  version: "1.0.0"
+  description: >-
+    Microsoft Cloud Security Benchmark(MCSB)와 Azure Well-Architected Framework 를 기준으로 한
+    PostgreSQL Flexible Server 표준 점검 항목. 접근 제어 · 암호화 · 백업 · 가용성을 다룬다.
+  applicable_resource_types:
+    - Microsoft.DBforPostgreSQL/flexibleServers
+
+categories:
+  - id: security
+    name: 보안
+    items:
+      - id: network
+        name: 네트워크 접근
+        checks:
+          - question: 공용 네트워크 접근이 차단되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.network.publicNetworkAccess
+                equals: Disabled
+              expected: Disabled
+              policy_effect: Audit
+              guidance: >-
+                MCSB Network Security(NS) — 사설 액세스(VNet 통합) 또는 Private Endpoint 로만 접근한다.
+          - question: 방화벽 규칙에 0.0.0.0-255.255.255.255 같은 전체 허용 규칙이 없는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: child_resource
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              guidance: >-
+                firewallRules 를 조회해 인터넷 전체를 여는 규칙이 있는지 확인한다.
+
+      - id: identity
+        name: 인증
+        checks:
+          - question: Microsoft Entra ID 인증이 활성화되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.authConfig.activeDirectoryAuth
+                equals: Enabled
+              expected: Enabled
+              guidance: >-
+                MCSB Identity Management(IM) — 로컬 관리자 계정 대신 중앙 ID 로 인증·감사한다.
+          - question: 로컬 암호 인증을 비활성화했거나 최소한으로 사용하는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.authConfig.passwordAuth
+                equals: Disabled
+              guidance: 관리 목적의 브레이크글래스 계정만 남긴다.
+
+      - id: encryption
+        name: 암호화
+        checks:
+          - question: SSL/TLS 연결이 강제되어 있는가? (require_secure_transport=ON)
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: server_configuration
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: require_secure_transport
+                equals: "on"
+              expected: "on"
+              guidance: MCSB Data Protection(DP) — 평문 연결을 거부한다.
+          - question: 최소 TLS 버전이 1.2 이상인가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: server_configuration
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: ssl_min_protocol_version
+                equals: TLSv1.2
+              expected: TLSv1.2
+              guidance: 구형 TLS 협상을 차단한다.
+
+  - id: reliability
+    name: 가용성·복구
+    items:
+      - id: ha
+        name: 고가용성
+        checks:
+          - question: 운영 환경에서 고가용성(Zone redundant 등)이 구성되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.highAvailability.mode
+              expected:
+                - ZoneRedundant
+                - SameZone
+              guidance: WAF Reliability — 단일 인스턴스는 계획된 유지 관리에도 중단된다.
+          - question: 운영 워크로드가 Burstable 이 아닌 General Purpose 이상 계층을 사용하는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: sku.tier
+              expected:
+                - GeneralPurpose
+                - MemoryOptimized
+              guidance: Burstable 은 지속 부하와 HA 요건에 적합하지 않다.
+
+      - id: backup
+        name: 백업
+        checks:
+          - question: "백업 보존 기간이 조직 기준(예: 7일 이상)을 충족하는가?"
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.backup.backupRetentionDays
+              expected: 7
+              guidance: MCSB Backup and Recovery(BR) — 복구 목표(RPO)에 맞춘 보존 기간을 설정한다.
+          - question: 지역 중복 백업이 활성화되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.backup.geoRedundantBackup
+                equals: Enabled
+              expected: Enabled
+              guidance: 리전 장애 시 복구 경로를 확보한다.
+
+  - id: operations
+    name: 운영
+    items:
+      - id: monitoring
+        name: 모니터링·버전
+        checks:
+          - question: 진단 설정으로 서버 로그를 중앙 수집하고 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: diagnostic_settings
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              guidance: MCSB Logging and Threat Detection(LT) — 감사·성능 로그를 보존한다.
+          - question: 지원 종료되지 않은 주 버전을 사용하는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.DBforPostgreSQL/flexibleServers
+              condition:
+                field: properties.version
+              recommended_versions:
+                - "16"
+                - "17"
+              guidance: EOL 버전은 보안 패치를 받지 못한다.

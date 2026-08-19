@@ -1,0 +1,171 @@
+metadata:
+  name: Azure Storage Account 표준 점검
+  version: "1.0.0"
+  description: >-
+    Microsoft Cloud Security Benchmark(MCSB)와 Azure Well-Architected Framework 를 기준으로 한
+    Storage Account 표준 점검 항목. 전송 보안 · 네트워크 노출 · 데이터 보호 · 복원력을 다룬다.
+  applicable_resource_types:
+    - Microsoft.Storage/storageAccounts
+
+categories:
+  - id: security
+    name: 보안
+    items:
+      - id: transport
+        name: 전송 보안
+        checks:
+          - question: 스토리지 계정이 HTTPS 전용(보안 전송 필수)으로 구성되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.supportsHttpsTrafficOnly
+                equals: "true"
+              expected: true
+              policy_effect: Deny
+              guidance: >-
+                MCSB Data Protection(DP) — 전송 중 데이터 암호화. supportsHttpsTrafficOnly=true 로
+                평문 HTTP 접근을 차단한다.
+          - question: 최소 TLS 버전이 1.2 이상으로 설정되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.minimumTlsVersion
+                equals: TLS1_2
+              expected: TLS1_2
+              guidance: >-
+                MCSB Data Protection(DP) — 취약한 TLS 1.0/1.1 협상을 차단한다.
+
+      - id: network
+        name: 네트워크 노출
+        checks:
+          - question: 공용 네트워크 접근이 차단되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.publicNetworkAccess
+                equals: Disabled
+              expected: Disabled
+              guidance: >-
+                MCSB Network Security(NS) — 공용 엔드포인트를 닫고 Private Endpoint 로만 접근한다.
+          - question: 기본 네트워크 규칙이 Deny 이고 필요한 대상만 허용되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.networkAcls.defaultAction
+                equals: Deny
+              expected: Deny
+              guidance: >-
+                MCSB Network Security(NS) — defaultAction=Allow 는 인터넷 전체를 허용하는 설정이다.
+          - question: Private Endpoint 로 연결되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: relationship
+              resource_type: Microsoft.Storage/storageAccounts
+              guidance: >-
+                privateEndpointConnections 가 하나 이상 Approved 상태인지 확인한다.
+
+      - id: identity
+        name: 인증·권한
+        checks:
+          - question: 공유 키(Shared Key) 인증이 비활성화되고 Entra ID 인증을 사용하는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.allowSharedKeyAccess
+                equals: "false"
+              expected: false
+              guidance: >-
+                MCSB Identity Management(IM) — 계정 키 대신 Entra ID + RBAC 로 최소 권한을 적용한다.
+          - question: Blob 컨테이너의 익명 공용 액세스가 차단되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.allowBlobPublicAccess
+                equals: "false"
+              expected: false
+              guidance: >-
+                MCSB Data Protection(DP) — 익명 읽기 허용은 데이터 유출의 대표 경로다.
+
+  - id: resilience
+    name: 복원력
+    items:
+      - id: redundancy
+        name: 중복성
+        checks:
+          - question: 워크로드 요구에 맞는 중복 옵션(ZRS 이상)을 사용하는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Storage/storageAccounts
+              expected:
+                - Standard_ZRS
+                - Standard_GZRS
+                - Standard_RAGZRS
+                - Premium_ZRS
+              guidance: >-
+                WAF Reliability — LRS 는 단일 데이터센터 장애에 취약하다. 가용성 영역 중복 이상을 권장한다.
+      - id: recovery
+        name: 복구
+        checks:
+          - question: Blob soft delete 가 활성화되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: blob_service_property
+              resource_type: Microsoft.Storage/storageAccounts
+              condition:
+                field: properties.deleteRetentionPolicy.enabled
+                equals: "true"
+              expected: true
+              guidance: >-
+                WAF Reliability / MCSB Backup and Recovery(BR) — 실수 삭제·랜섬웨어 대비 복구 창을 확보한다.
+          - question: 컨테이너 soft delete 와 버전 관리가 적용되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: blob_service_property
+              resource_type: Microsoft.Storage/storageAccounts
+              guidance: >-
+                containerDeleteRetentionPolicy 와 isVersioningEnabled 를 함께 확인한다.
+
+  - id: operations
+    name: 운영
+    items:
+      - id: monitoring
+        name: 모니터링
+        checks:
+          - question: 진단 설정으로 Storage 로그를 Log Analytics 등에 보내고 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: diagnostic_settings
+              resource_type: Microsoft.Storage/storageAccounts
+              guidance: >-
+                MCSB Logging and Threat Detection(LT) — 보안 조사에 필요한 데이터 평면 로그를 보존한다.
+          - question: 스토리지 계정에 소유자·비용 센터 등 필수 태그가 부여되어 있는가?
+            priority: LOW
+            azure_check:
+              type: manual
+              resource_type: Microsoft.Storage/storageAccounts
+              guidance: >-
+                조직 태그 표준(owner, env, cost-center)을 따르는지 확인한다.

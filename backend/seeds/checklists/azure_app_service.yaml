@@ -1,0 +1,172 @@
+metadata:
+  name: Azure App Service 표준 점검
+  version: "1.0.0"
+  description: >-
+    Microsoft Cloud Security Benchmark(MCSB)와 Azure Well-Architected Framework 를 기준으로 한
+    App Service(Web App) 표준 점검 항목. 전송 보안 · 인증 · 네트워크 · 운영 안정성을 다룬다.
+  applicable_resource_types:
+    - Microsoft.Web/sites
+
+categories:
+  - id: security
+    name: 보안
+    items:
+      - id: transport
+        name: 전송 보안
+        checks:
+          - question: HTTPS Only 가 활성화되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.httpsOnly
+                equals: "true"
+              expected: true
+              policy_effect: Deny
+              guidance: >-
+                MCSB Data Protection(DP) — HTTP 요청을 HTTPS 로 리다이렉트하고 평문 통신을 차단한다.
+          - question: 최소 TLS 버전이 1.2 이상인가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.siteConfig.minTlsVersion
+                equals: "1.2"
+              expected: "1.2"
+              guidance: >-
+                MCSB Data Protection(DP) — TLS 1.0/1.1 은 사용하지 않는다.
+          - question: FTP/FTPS 배포가 비활성화(Disabled) 되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.siteConfig.ftpsState
+                equals: Disabled
+              expected: Disabled
+              guidance: >-
+                평문 FTP 자격 증명 노출을 차단한다. 필요한 경우에만 FtpsOnly 를 사용한다.
+
+      - id: identity
+        name: 인증·자격 증명
+        checks:
+          - question: 관리 ID(System 또는 User-Assigned)를 사용하고 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: identity.type
+                equals: SystemAssigned
+              guidance: >-
+                MCSB Identity Management(IM) — 연결 문자열·시크릿 대신 관리 ID 로 다운스트림 리소스에 접근한다.
+          - question: 앱 설정에 시크릿을 평문으로 저장하지 않고 Key Vault 참조를 사용하는가?
+            priority: HIGH
+            azure_check:
+              type: manual
+              resource_type: Microsoft.Web/sites
+              guidance: >-
+                MCSB Data Protection(DP) — @Microsoft.KeyVault(...) 참조 또는 관리 ID 기반 접근을 사용한다.
+          - question: 원격 디버깅이 비활성화되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.siteConfig.remoteDebuggingEnabled
+                equals: "false"
+              expected: false
+              guidance: 운영 환경에서는 원격 디버깅을 끈다.
+
+      - id: network
+        name: 네트워크
+        checks:
+          - question: 공용 접근이 필요 없다면 public network access 가 제한되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.publicNetworkAccess
+                equals: Disabled
+              guidance: >-
+                MCSB Network Security(NS) — 내부 전용 앱은 Private Endpoint + 접근 제한 규칙으로 노출을 줄인다.
+          - question: 아웃바운드 트래픽이 VNet 통합을 통해 제어되는가?
+            priority: MEDIUM
+            azure_check:
+              type: manual
+              resource_type: Microsoft.Web/sites
+              guidance: 데이터 계층·레지스트리로의 통신이 사설 경로를 사용하는지 확인한다.
+
+  - id: reliability
+    name: 안정성
+    items:
+      - id: runtime
+        name: 런타임 구성
+        checks:
+          - question: Always On 이 활성화되어 있는가? (Basic 이상)
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.siteConfig.alwaysOn
+                equals: "true"
+              expected: true
+              guidance: WAF Reliability — 콜드 스타트와 유휴 종료로 인한 요청 실패를 줄인다.
+          - question: 상태 확인(Health check) 경로가 구성되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              condition:
+                field: properties.siteConfig.healthCheckPath
+              guidance: 비정상 인스턴스를 로드 밸런서에서 자동 제외하려면 상태 확인 경로가 필요하다.
+          - question: 지원되는 런타임 스택 버전을 사용하는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: site_config
+              resource_type: Microsoft.Web/sites
+              guidance: EOL 런타임은 보안 패치를 받지 못한다.
+
+      - id: scale
+        name: 확장·배포
+        checks:
+          - question: 운영 워크로드가 Production 등급 플랜(Standard/Premium)에서 실행되는가?
+            priority: MEDIUM
+            azure_check:
+              type: manual
+              resource_type: Microsoft.Web/sites
+              guidance: Free/Shared/Basic 은 SLA·자동 확장·슬롯 제약이 있다.
+          - question: 배포 슬롯을 사용해 무중단 배포를 하는가?
+            priority: LOW
+            azure_check:
+              type: manual
+              resource_type: Microsoft.Web/sites
+              guidance: WAF Operational Excellence — 슬롯 스왑으로 롤백 경로를 확보한다.
+
+  - id: operations
+    name: 운영
+    items:
+      - id: monitoring
+        name: 모니터링
+        checks:
+          - question: 진단 설정과 Application Insights 가 연결되어 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: diagnostic_settings
+              resource_type: Microsoft.Web/sites
+              guidance: >-
+                MCSB Logging and Threat Detection(LT) — 애플리케이션 로그·요청 추적을 중앙에 보존한다.

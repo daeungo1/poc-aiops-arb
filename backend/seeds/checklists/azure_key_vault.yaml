@@ -1,0 +1,129 @@
+metadata:
+  name: Azure Key Vault 표준 점검
+  version: "1.0.0"
+  description: >-
+    Microsoft Cloud Security Benchmark(MCSB)와 Azure Well-Architected Framework 를 기준으로 한
+    Key Vault 표준 점검 항목. 권한 모델 · 삭제 보호 · 네트워크 · 감사 로그를 다룬다.
+  applicable_resource_types:
+    - Microsoft.KeyVault/vaults
+
+categories:
+  - id: access
+    name: 권한 모델
+    items:
+      - id: rbac
+        name: 인증·권한
+        checks:
+          - question: Azure RBAC 권한 모델을 사용하는가? (레거시 액세스 정책 아님)
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.enableRbacAuthorization
+                equals: "true"
+              expected: true
+              guidance: >-
+                MCSB Privileged Access(PA) — RBAC 로 최소 권한을 일관되게 적용하고 감사한다.
+          - question: 애플리케이션이 관리 ID로 접근하는가? (시크릿·인증서 기반 접근 아님)
+            priority: HIGH
+            azure_check:
+              type: manual
+              resource_type: Microsoft.KeyVault/vaults
+              guidance: MCSB Identity Management(IM) — 자격 증명의 자격 증명을 만들지 않는다.
+
+  - id: protection
+    name: 데이터 보호
+    items:
+      - id: deletion
+        name: 삭제 보호
+        checks:
+          - question: 일시 삭제(soft delete)가 활성화되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.enableSoftDelete
+                equals: "true"
+              expected: true
+              guidance: MCSB Backup and Recovery(BR) — 실수 삭제된 키·시크릿을 복구할 수 있어야 한다.
+          - question: 제거 보호(purge protection)가 활성화되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.enablePurgeProtection
+                equals: "true"
+              expected: true
+              policy_effect: Audit
+              guidance: 보존 기간 내 영구 삭제를 차단해 악의적 삭제에 대응한다.
+          - question: 보존 기간(soft delete retention)이 조직 기준을 충족하는가?
+            priority: MEDIUM
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.softDeleteRetentionInDays
+              expected: 90
+              guidance: 기본 90일 보존을 권장한다.
+
+      - id: lifecycle
+        name: 수명 주기
+        checks:
+          - question: 시크릿·키·인증서에 만료일이 설정되고 갱신 절차가 있는가?
+            priority: MEDIUM
+            azure_check:
+              type: manual
+              resource_type: Microsoft.KeyVault/vaults
+              guidance: >-
+                만료 임박 항목에 대한 알림과 자동 순환(rotation) 정책을 갖춘다.
+
+  - id: network
+    name: 네트워크
+    items:
+      - id: exposure
+        name: 노출 제어
+        checks:
+          - question: 공용 네트워크 접근이 차단되어 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.publicNetworkAccess
+                equals: Disabled
+              expected: Disabled
+              guidance: MCSB Network Security(NS) — Private Endpoint 로만 접근한다.
+          - question: 기본 네트워크 규칙이 Deny 인가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: property
+              resource_type: Microsoft.KeyVault/vaults
+              condition:
+                field: properties.networkAcls.defaultAction
+                equals: Deny
+              expected: Deny
+              guidance: 신뢰할 수 있는 서비스·지정 서브넷만 예외로 허용한다.
+
+  - id: operations
+    name: 운영
+    items:
+      - id: audit
+        name: 감사
+        checks:
+          - question: AuditEvent 진단 로그를 수집하고 있는가?
+            priority: HIGH
+            azure_check:
+              type: automated
+              check_method: diagnostic_settings
+              resource_type: Microsoft.KeyVault/vaults
+              guidance: >-
+                MCSB Logging and Threat Detection(LT) — 누가 어떤 시크릿에 접근했는지 추적 가능해야 한다.

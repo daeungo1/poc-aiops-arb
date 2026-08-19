@@ -132,19 +132,46 @@ v2에서 LLM은 **근거 설명 · 후속 조사 · 관리형 원천으로 매�
 
 ### 3.3 체크리스트
 
-YAML 1파일 = 체크리스트 1개이며, 업로드 시 원문(`raw_yaml`)과 3단 계층 평탄화 결과가 DB에 저장됩니다. **YAML 원본은 저장소에 두지 않고 앱의 체크리스트 화면에서 등록**합니다.
+YAML 1파일 = 체크리스트 1개이며, 등록하면 `upsert_from_yaml_content()` 가 원문(`raw_yaml`)을 `checklists` 에,
+3단 계층 평탄화 결과를 `checklist_items` 에 저장합니다. **런타임 조회는 항상 DB 기준**입니다.
 
 ```yaml
 metadata:            # name · version · description · applicable_resource_types
 categories:
-  - items:
-      - checks:      # question · priority · check_type(manual|automated) · check_method
-                     # condition_field/equals · expected_value · policy_effect · guidance
+  - id: <필수>
+    name: <필수>
+    items:
+      - id: <필수>
+        name: <필수>
+        checks:
+          - question: <필수>
+            priority: HIGH | MEDIUM | LOW
+            azure_check:  # type(manual|automated) · check_method · resource_type
+                          # condition.field/equals · expected · policy_effect · guidance
 ```
 
 - `applicable_resource_types`가 비면 모든 타입에 적용되는 **universal**, 값이 있으면 case-insensitive substring 매칭으로 **specific** 체크리스트가 됩니다.
-- 대표 평가 영역: System Stability, Database Common, Azure MySQL, Azure PostgreSQL, Azure CosmosDB.
+- 등록 경로는 세 가지입니다 — 체크리스트 화면 업로드, `POST /api/checklists/upload`, 그리고 **대량 시드 스크립트**.
 - v2는 여기에 더해 control ↔ 관리형 원천 매핑 YAML을 사용하며(`experiments/coverage_spike/mappings/`), 각 원천은 API 버전 또는 `query-sha256`으로 고정해 재현성을 보장합니다.
+
+**시드 코퍼스** (`backend/seeds/checklists/`) — Microsoft Cloud Security Benchmark · Well-Architected Framework 기준의 샘플 5종(검사 59개: 자동 47 / 수동 12).
+
+| 파일 | 적용 타입 |
+|---|---|
+| `azure_storage_account.yaml` | `Microsoft.Storage/storageAccounts` |
+| `azure_app_service.yaml` | `Microsoft.Web/sites` |
+| `azure_postgresql_flexible.yaml` | `Microsoft.DBforPostgreSQL/flexibleServers` |
+| `azure_key_vault.yaml` | `Microsoft.KeyVault/vaults` |
+| `azure_common_governance.yaml` | (비움 — universal) |
+
+```bash
+# 로컬 DB 직접 등록 / 검증만 / 배포 인스턴스에 HTTP 등록
+cd backend && uv run python scripts/seed_checklists.py
+cd backend && uv run python scripts/seed_checklists.py --dry-run
+cd backend && uv run python scripts/seed_checklists.py --api-base https://<host>
+```
+
+스크립트는 디렉터리를 재귀 탐색해 파일단위로 검증·등록하고, 한 파일이 실패해도 나머지를 계속 처리한 뒤 요약과 종료 코드로 보고합니다(수백 건 등록 전제). 동일한 파일명으로 다시 실행하면 upsert 됩니다.
 
 ### 3.4 챗봇 도구 (9종)
 
@@ -173,7 +200,7 @@ categories:
 
 ---
 
-## 4. 데이터 구성
+## 4. 데이터 구성 (PostgreSQL)
 
 기동 시 `agent/db_init.py`가 `backend/scripts/01_schema.sql`을 적용합니다. `DB_HOST`가 비면 로컬 `results/{subscription}/` 파일 기반으로 폴백합니다.
 

@@ -136,7 +136,8 @@ docker build -f docker/Dockerfile.frontend -t <acr>.azurecr.io/aiops-fe:latest .
 - **구독 스코프**: UI에서 테넌트+구독 선택 → `X-Azure-Tenant-Id` / `X-Azure-Subscription-Id` 헤더로 전달 →
   `chat/tools/azure_session.py`가 도구 컨텍스트에 반영. 평가는 이 스코프에서 Resource Graph로 조회.
 - **평가 실행 전제**: `run_assessment`는 유효한 `checklist_id`(문자열) 또는 `checklist_ids`(배열)가 있어야 실행됨.
-  없으면 카탈로그만 반환. 체크리스트는 **DB에 등록된 YAML**에서 로드됨(레포에 YAML 원본은 두지 않음).
+  없으면 카탈로그만 반환. 체크리스트는 **DB(`checklists` + `checklist_items`)에서 로드**되며, 입력 원본 YAML 샘플은
+  `backend/seeds/checklists/` 에 있고 `backend/scripts/seed_checklists.py` 로 일괄 등록한다(upsert).
 - **대시보드 "구독 ID" 드롭다운**은 실시간 구독 목록이 아니라 **DB에 평가결과가 있는 구독**만 표시 → 신규 배포 시 비어 있음(정상).
 - **체크리스트 YAML 스키마**: `metadata`(name/version/description/applicable_resource_types) →
   `categories[].items[].checks[]`, 각 check는 `question` + `azure_check`(type: automated|manual, guidance 등).
